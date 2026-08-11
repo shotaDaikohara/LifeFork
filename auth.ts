@@ -13,6 +13,9 @@ import { isAllowedEmail } from "@/lib/allowedEmails";
  *   各リクエストで auth() によりサーバー側セッション検証を行う（各 route.ts 参照）。
  */
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  // VercelのProduction/Previewはデプロイごとにホスト名が変わり得るため、
+  // ホスト検証 (UntrustedHost) を明示的に信頼する。
+  trustHost: true,
   providers: [
     Google({
       authorization: { params: { scope: "openid email profile" } },
