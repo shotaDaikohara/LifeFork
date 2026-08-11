@@ -18,6 +18,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
   providers: [
     Google({
+      // Auth.js v5 は既定で AUTH_GOOGLE_ID / AUTH_GOOGLE_SECRET を自動参照するが、
+      // 設計書20.4章の変数名 (GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET) に合わせるため明示的に渡す。
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       authorization: { params: { scope: "openid email profile" } },
     }),
   ],
