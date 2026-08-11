@@ -19,6 +19,11 @@ export function statusForErrorCode(code: ApiErrorBody["error"]["code"]): number 
   switch (code) {
     case "invalid_request":
       return 400;
+    case "unauthorized":
+      return 401;
+    case "forbidden":
+      return 403;
+    case "app_rate_limited":
     case "rate_limited":
       return 429;
     case "upstream_error":

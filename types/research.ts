@@ -136,6 +136,9 @@ export interface ApiErrorBody {
   error: {
     code:
       | "invalid_request"
+      | "unauthorized"
+      | "forbidden"
+      | "app_rate_limited"
       | "rate_limited"
       | "upstream_error"
       | "timeout"

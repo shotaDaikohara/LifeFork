@@ -4,17 +4,21 @@ import { buildInterviewPrompt } from "@/lib/PromptBuilder";
 import { requestInterviewCompletion } from "@/lib/OrcaRouterClient";
 import { validateInterviewResponse } from "@/lib/InterviewValidator";
 import { ResearchError, toErrorResponse } from "@/lib/errors";
+import { requireAuthorizedUser } from "@/lib/apiGuard";
 
 export const runtime = "nodejs";
 
 /**
  * POST /api/interview
  * 設計書 7章・8.1章に対応する InterviewController。
+ * 未認証は401、ホワイトリスト対象外は403、Rate Limit超過は429を返す（設計書14.1章・14.2章）。
  * プロフィール・将来像を検証し、PromptBuilder → OrcaRouterClient → InterviewValidator の順で処理する。
  * 質問は1回のみ生成し、回答ごとの逐次質問生成は行わない。
  */
 export async function POST(request: Request) {
   try {
+    await requireAuthorizedUser();
+
     const json = await request.json().catch(() => {
       throw new ResearchError("invalid_request", "リクエストボディがJSONとして解釈できません。");
     });
