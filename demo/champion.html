@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LifeFork | 比較結果サンプル（チャンピオンデータ）</title>
+<style>
+  :root {
+    --zinc-50: #fafafa; --zinc-100: #f4f4f5; --zinc-200: #e4e4e7; --zinc-300: #d4d4d8;
+    --zinc-400: #a1a1aa; --zinc-500: #71717a; --zinc-600: #52525b; --zinc-700: #3f3f46;
+    --zinc-900: #18181b; --indigo-50: #eef2ff; --indigo-100: #e0e7ff; --indigo-600: #4f46e5;
+    --indigo-700: #4338ca; --amber-50: #fffbeb; --amber-200: #fde68a; --amber-800: #92400e;
+    --emerald-50: #ecfdf5; --emerald-700: #047857; --red-50: #fef2f2; --red-700: #b91c1c;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--zinc-50); color: var(--zinc-900);
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", sans-serif;
+  }
+  main { max-width: 960px; margin: 0 auto; padding: 48px 16px 80px; }
+  .notice {
+    background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412;
+    border-radius: 10px; padding: 12px 16px; font-size: 13px; margin-bottom: 32px;
+  }
+  .eyebrow { color: var(--indigo-600); font-size: 14px; font-weight: 600; margin: 0; }
+  h1 { font-size: 28px; font-weight: 800; margin: 4px 0 0; letter-spacing: -0.01em; }
+  .conclusion { font-size: 15px; line-height: 1.8; color: var(--zinc-700); margin-top: 12px; }
+  .grid { display: grid; grid-template-columns: 1fr; gap: 24px; margin-top: 32px; }
+  @media (min-width: 800px) { .grid { grid-template-columns: 1fr 1fr; } }
+  .card {
+    background: #fff; border: 1px solid var(--zinc-200); border-radius: 14px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .card.current { border-top: 4px solid var(--zinc-300); }
+  .card.target { border-top: 4px solid var(--indigo-600); }
+  .badge {
+    display: inline-block; border-radius: 999px; padding: 3px 10px; font-size: 12px; font-weight: 600;
+  }
+  .badge.current { background: var(--zinc-100); color: var(--zinc-600); }
+  .badge.target { background: var(--indigo-50); color: var(--indigo-700); }
+  .card h3 { font-size: 18px; font-weight: 700; margin: 10px 0 0; }
+  .section-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--zinc-400); margin: 18px 0 4px;
+  }
+  .section-body { font-size: 14px; color: var(--zinc-700); line-height: 1.7; }
+  .evidence, .assumptions { margin: 6px 0 0; padding-left: 18px; font-size: 12px; color: var(--zinc-500); }
+  .income-current { font-size: 12px; color: var(--zinc-500); }
+  .income-value { font-size: 20px; font-weight: 700; }
+  .income-range { font-size: 12px; color: var(--zinc-500); margin-left: 4px; }
+  ol.steps { margin: 4px 0 0; padding-left: 20px; font-size: 14px; color: var(--zinc-700); line-height: 1.8; }
+  .risk { border: 1px solid var(--zinc-200); border-radius: 10px; padding: 10px 12px; margin-top: 10px; }
+  .risk-title { font-size: 14px; font-weight: 600; }
+  .risk-desc { font-size: 13px; color: var(--zinc-600); margin-top: 4px; }
+  .tag { display: inline-block; border-radius: 999px; padding: 2px 8px; font-size: 11px; margin-left: 6px; }
+  .tag.low { background: var(--emerald-50); color: var(--emerald-700); }
+  .tag.medium { background: var(--amber-50); color: var(--amber-800); }
+  .tag.high { background: var(--red-50); color: var(--red-700); }
+  .tag.unknown { background: var(--zinc-100); color: var(--zinc-500); }
+  .tag.impact { background: var(--zinc-100); color: var(--zinc-600); }
+  .panel { background: #fff; border: 1px solid var(--zinc-200); border-radius: 14px; padding: 20px; margin-top: 24px; }
+  .panel.limits { background: var(--amber-50); border-color: var(--amber-200); }
+  .panel h2 { font-size: 14px; font-weight: 700; margin: 0 0 8px; }
+  .panel ul { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.8; color: var(--zinc-600); }
+  .panel.limits ul { color: var(--amber-800); }
+  .panel a { color: var(--indigo-600); text-decoration: underline; }
+  .footnote { font-size: 12px; color: var(--zinc-400); margin-top: 24px; line-height: 1.7; }
+</style>
+</head>
+<body>
+<main>
+  <div class="notice">
+    このページは発表用に人手でリサーチ・検証した「チャンピオンデータ」のサンプルです。設計書12章の方針に基づき、
+    Liveシステム（/api/research）の出力とは分離しています。登場人物・数値は架空の設定です。
+  </div>
+
+  <p class="eyebrow">比較結果サンプル</p>
+  <h1>今の経理職を続けるより、IT業界の経理財務ポジションへの転職の方が、専門性を積みながら年収の伸びしろを確保しやすい可能性があります。</h1>
+  <p class="conclusion">
+    佐藤花子さん（架空・33歳、メーカー企業 経理歴7年）のプロフィールをもとにリサーチしました。
+    現職を続けた場合は安定した昇給が見込める一方、伸び幅は緩やかです。IT業界の経理財務職は求人需要が旺盛で、
+    経理経験と英語力を組み合わせられれば年収レンジが上振れしやすい傾向がありますが、業界特有の会計処理（収益認識など）への
+    キャッチアップが必要という前提付きです。
+  </p>
+
+  <div class="grid">
+    <section class="card current">
+      <span class="badge current">今の道を続ける</span>
+      <h3>メーカー企業での経理職を継続</h3>
+
+      <div class="section-label">将来性</div>
+      <p class="section-body">
+        大手メーカーの経理として安定したポジションを維持できる見込みです。年功的な昇給に加え、決算経験を積むことで
+        主任・係長クラスへの昇格が視野に入ります。ただし業務のDX化により定型業務の比重は縮小していく可能性があります。
+      </p>
+      <ul class="evidence">
+        <li>7年の経理実務経験があり、社内評価は安定している（本人申告ベース）</li>
+        <li>製造業経理は決算・原価計算の専門性が評価されやすい傾向</li>
+      </ul>
+
+      <div class="section-label">年収</div>
+      <div>
+        <span class="income-current">現在</span>
+        <span class="income-value">4,500,000円</span>
+      </div>
+      <div style="margin-top:4px;">
+        <span class="income-current">3年後（想定レンジ）</span>
+        <span class="income-value">4,950,000円</span>
+        <span class="income-range">（4,700,000円 〜 5,300,000円）</span>
+      </div>
+      <ul class="assumptions">
+        <li>年1〜2%程度の定期昇給が継続すると仮定</li>
+        <li>主任昇格（3年以内）を仮定した場合の上振れを含む</li>
+      </ul>
+
+      <div class="section-label">実現手段</div>
+      <ol class="steps">
+        <li>決算業務の主担当化を目指し、上長へ担当領域拡大を相談する</li>
+        <li>日商簿記1級または税理士科目合格を目標に学習を継続する</li>
+        <li>連結決算・IFRS対応など上位スキルの習得機会を社内で探す</li>
+      </ol>
+
+      <div class="section-label">リスク</div>
+      <div class="risk">
+        <span class="risk-title">経理業務のDX・自動化による定型業務の縮小</span>
+        <span class="tag medium">可能性: 中</span>
+        <span class="tag impact">影響: 中</span>
+        <p class="risk-desc">
+          会計ソフトやRPA導入により、伝票入力など定型業務の需要が中期的に減少する可能性があります。
+        </p>
+      </div>
+      <div class="risk">
+        <span class="risk-title">昇格ポストの限界による頭打ち</span>
+        <span class="tag medium">可能性: 中</span>
+        <span class="tag impact">影響: 中</span>
+        <p class="risk-desc">
+          同世代内でのポスト競合により、想定より昇格ペースが遅れる可能性があります。
+        </p>
+      </div>
+    </section>
+
+    <section class="card target">
+      <span class="badge target">検討している道</span>
+      <h3>IT業界（SaaS企業想定）の経理財務職への転職</h3>
+
+      <div class="section-label">将来性</div>
+      <p class="section-body">
+        SaaS・IT業界は成長投資に伴う資金調達・IPO準備などで経理財務人材の需要が高く、経理経験者を歓迎する求人が
+        比較的多い分野です。将来的にはFP&A（経営企画寄りの財務）へのキャリア拡張も見込めますが、
+        収益認識基準やSaaS特有のKPI管理など、キャッチアップが必要な領域があります。
+      </p>
+      <ul class="evidence">
+        <li>IT・SaaS企業は経理財務ポジションの中途採用に積極的な求人が多い傾向</li>
+        <li>経理実務7年の経験は業界を問わず一定の評価を受けやすい</li>
+      </ul>
+
+      <div class="section-label">年収</div>
+      <div style="margin-top:4px;">
+        <span class="income-current">3年後（想定レンジ）</span>
+        <span class="income-value">5,800,000円</span>
+        <span class="income-range">（5,000,000円 〜 6,800,000円）</span>
+      </div>
+      <ul class="assumptions">
+        <li>入社時は現職と同水準〜微増、その後の評価次第で上振れすると仮定</li>
+        <li>IPO準備・上場企業での経験加算を含めた場合の上限値</li>
+        <li>ストックオプション等の非金銭報酬は含まない</li>
+      </ul>
+
+      <div class="section-label">実現手段</div>
+      <ol class="steps">
+        <li>SaaS企業の決算開示・収益認識基準（IFRS15等）を独学でキャッチアップする</li>
+        <li>IT業界の経理財務職に絞って転職エージェント2〜3社に登録する</li>
+        <li>面接では製造業とSaaS業態の会計処理の違いを説明できるよう準備する</li>
+      </ol>
+
+      <div class="section-label">リスク</div>
+      <div class="risk">
+        <span class="risk-title">業界特有の会計処理・KPI管理へのキャッチアップ負荷</span>
+        <span class="tag medium">可能性: 中</span>
+        <span class="tag impact">影響: 大</span>
+        <p class="risk-desc">
+          収益認識基準やSaaS特有の指標（ARR、チャーン等）の理解に一定の学習期間が必要です。
+        </p>
+      </div>
+      <div class="risk">
+        <span class="risk-title">スタートアップ・成長企業特有の事業変動リスク</span>
+        <span class="tag unknown">可能性: 不明</span>
+        <span class="tag impact">影響: 中</span>
+        <p class="risk-desc">
+          企業フェーズによっては組織変更や事業方針転換の影響を受けやすく、根拠となる情報が限定的です。
+        </p>
+      </div>
+    </section>
+  </div>
+
+  <section class="panel">
+    <h2>根拠・参考情報</h2>
+    <ul>
+      <li><a href="https://www.mhlw.go.jp/toukei/itiran/roudou/chingin/kouzou/" target="_blank" rel="noopener noreferrer">厚生労働省 賃金構造基本統計調査</a> — 経理職種の年収水準の参考</li>
+      <li><a href="https://www.jicpa.or.jp/" target="_blank" rel="noopener noreferrer">日本公認会計士協会</a> — 会計・決算関連の専門情報の参考</li>
+    </ul>
+  </section>
+
+  <section class="panel limits">
+    <h2>この結果の限界・前提の不確実性</h2>
+    <ul>
+      <li>年収レンジは公開求人情報・一般的な統計傾向をもとにした推定であり、個別企業のオファー額を保証するものではありません。</li>
+      <li>本ページは発表用に人手で作成したサンプルであり、Live版（OrcaRouter経由）の出力とは生成方法が異なります。</li>
+      <li>プロフィール・数値は架空の設定です。</li>
+    </ul>
+  </section>
+
+  <p class="footnote">
+    LifeFork Demo — 本ページは静的HTMLであり、システムのLive出力とは分離した発表用成果物です（設計書12章）。
+  </p>
+</main>
+</body>
+</html>
