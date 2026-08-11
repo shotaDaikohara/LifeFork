@@ -1,3 +1,4 @@
+import { NextResponse } from "next/server";
 import type { ApiErrorBody } from "@/types/research";
 
 /**
@@ -30,4 +31,23 @@ export function statusForErrorCode(code: ApiErrorBody["error"]["code"]): number 
     default:
       return 500;
   }
+}
+
+/**
+ * Route Handler の catch 節で使う共通のエラーレスポンス変換。
+ * ResearchError 以外の例外は internal_error として扱う。
+ */
+export function toErrorResponse(err: unknown): NextResponse<ApiErrorBody> {
+  const appError =
+    err instanceof ResearchError
+      ? err
+      : new ResearchError(
+          "internal_error",
+          err instanceof Error ? err.message : "サーバーで予期しないエラーが発生しました。",
+        );
+
+  const body: ApiErrorBody = {
+    error: { code: appError.code, message: appError.message },
+  };
+  return NextResponse.json(body, { status: statusForErrorCode(appError.code) });
 }

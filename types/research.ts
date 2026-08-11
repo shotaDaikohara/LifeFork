@@ -3,9 +3,13 @@ import { z } from "zod";
 /**
  * LifeFork ドメイン型定義
  *
- * 設計書「LifeFork_システム基本設計_v0.2」 8章・10章に対応。
+ * 設計書「LifeFork_システム基本設計_v0.3」 8章・10章に対応。
  * zod スキーマを単一の情報源とし、型はスキーマから推論する。
  * ワイヤーフレーム未確定のため profile.fields は自由なキー/値を許容する。
+ *
+ * ヒアリング質問 (InterviewQuestion) は v0.3 で AI 動的生成に変更されたため
+ * types/interview.ts で定義する。本ファイルの Profile / Goal / GoalType は
+ * interview.ts からも再利用される。
  */
 
 // ---------------------------------------------------------------------------
@@ -28,6 +32,10 @@ export type Goal = z.infer<typeof goalSchema>;
 
 export const interviewAnswerSchema = z.object({
   questionId: z.string().min(1),
+  // POST /api/interview で動的生成された質問文。DBを持たないため、
+  // PromptBuilder が research_system.md 向けプロンプトを組み立てる際の
+  // 質問ラベル解決はクライアントから再送されるこの値に依存する。
+  question: z.string().optional(),
   answer: z.string(),
 });
 export type InterviewAnswer = z.infer<typeof interviewAnswerSchema>;
@@ -136,20 +144,3 @@ export interface ApiErrorBody {
     message: string;
   };
 }
-
-// ---------------------------------------------------------------------------
-// ヒアリング質問定義 (data/interview/questions.json)
-// ---------------------------------------------------------------------------
-
-export const interviewQuestionSchema = z.object({
-  id: z.string(),
-  label: z.string(),
-  type: z.enum(["text", "textarea", "select"]),
-  options: z.array(z.string()).optional(),
-  placeholder: z.string().optional(),
-  required: z.boolean().default(false),
-  appliesTo: z.array(goalTypeSchema).optional(),
-});
-export type InterviewQuestion = z.infer<typeof interviewQuestionSchema>;
-
-export const interviewQuestionsFileSchema = z.array(interviewQuestionSchema);
