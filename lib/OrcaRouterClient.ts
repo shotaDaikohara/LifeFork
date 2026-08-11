@@ -24,7 +24,10 @@ function getEnv() {
   const baseURL = process.env.ORCAROUTER_BASE_URL || DEFAULT_BASE_URL;
   const model = process.env.ORCAROUTER_MODEL || DEFAULT_MODEL;
   const timeoutMs = Number(process.env.ORCAROUTER_TIMEOUT_MS) || DEFAULT_TIMEOUT_MS;
-  return { apiKey, baseURL, model, timeoutMs };
+  // 設計書9.5章: Web Searchの実発火をモデル/ルートごとに確認したうえで有効化する。
+  // 対応が未確認のモデルではデフォルトで無効。
+  const webSearchEnabled = process.env.ORCAROUTER_WEB_SEARCH === "true";
+  return { apiKey, baseURL, model, timeoutMs, webSearchEnabled };
 }
 
 export function isOrcaRouterConfigured(): boolean {
@@ -32,11 +35,12 @@ export function isOrcaRouterConfigured(): boolean {
 }
 
 export function orcaRouterHealthInfo() {
-  const { baseURL, model } = getEnv();
+  const { baseURL, model, webSearchEnabled } = getEnv();
   return {
     configured: isOrcaRouterConfigured(),
     baseUrl: baseURL,
     model,
+    webSearchEnabled,
   };
 }
 
@@ -79,7 +83,7 @@ export async function requestResearchCompletion(
   messages: ChatMessages,
   retryHint?: string,
 ): Promise<string> {
-  const { model } = getEnv();
+  const { model, webSearchEnabled } = getEnv();
   const openai = getClient();
 
   const chatMessages: OpenAI.Chat.ChatCompletionMessageParam[] = [
@@ -90,10 +94,14 @@ export async function requestResearchCompletion(
     chatMessages.push({ role: "user", content: retryHint });
   }
 
+  // web_search_options は gpt-4o-*-search-preview 等、対応が確認できたモデルでのみ付与する。
+  const webSearchParams = webSearchEnabled ? { web_search_options: {} } : {};
+
   const attemptWithSchema = async () => {
     return openai.chat.completions.create({
       model,
       messages: chatMessages,
+      ...webSearchParams,
       response_format: {
         type: "json_schema",
         json_schema: {
@@ -109,6 +117,7 @@ export async function requestResearchCompletion(
     return openai.chat.completions.create({
       model,
       messages: chatMessages,
+      ...webSearchParams,
       response_format: { type: "json_object" },
     });
   };

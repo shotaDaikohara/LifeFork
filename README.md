@@ -69,8 +69,14 @@ curl http://localhost:3000/api/health
 | --- | --- | --- |
 | `ORCAROUTER_API_KEY` | ✅ | OrcaRouterのAPIキー。サーバー側でのみ使用し、ブラウザへは渡しません。 |
 | `ORCAROUTER_BASE_URL` | - | OrcaRouterのBase URL。未設定時は `https://api.orcarouter.ai/v1`。 |
-| `ORCAROUTER_MODEL` | - | 使用するモデル/ルーターID。未設定時は `orcarouter/auto`。Web Searchの実発火を確認したモデル/ルートへの切り替えを推奨します。 |
+| `ORCAROUTER_MODEL` | - | 使用するモデル/ルーターID。未設定時は `orcarouter/auto`。`openai/gpt-4o-mini-search-preview` は実検索(`url_citation`)の発火と`response_format`併用を確認済みです。 |
 | `ORCAROUTER_TIMEOUT_MS` | - | OrcaRouter呼び出しのタイムアウト（ミリ秒）。未設定時は `55000`。 |
+| `ORCAROUTER_WEB_SEARCH` | - | `true` にすると `web_search_options` を付与しWeb Searchを有効化します。未設定時は `false`。対応未確認のモデルで `true` にすると400エラーになる場合があります。 |
+
+### Web Search対応モデルについて（設計書9.5章）
+
+`/api/pricing`（認証不要）でOrcaRouterの全モデルの価格・対応パラメータを確認できます。`supported_parameters` に `web_search_options` を含むモデルが実検索候補です（2026-08-12時点で確認できたのは `openai/gpt-4o-search-preview` 系・`openai/gpt-5-search-api` 系）。
+このうち `openai/gpt-4o-mini-search-preview` は、`response_format: json_schema` と `web_search_options` を併用してもJSON構造を維持しつつ実URLを含む回答を返すことを確認済みです。価格・提供状況は変動するため、切り替え前に同様の疎通確認を行ってください。
 
 ## API
 
