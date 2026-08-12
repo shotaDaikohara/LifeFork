@@ -35,6 +35,13 @@
 
 ユーザーの入力条件（資金・経験・時間的余裕など）から見た「進める道への現実的な近さ」の相対的な目安です。厳密な計算式に基づくものではないため、過度に精密な値（例: 63.4）ではなく、10刻み程度のキリの良い値を目安に、なぜその水準かが `summary.comparisonConclusion` や各パスの説明から読み取れるようにしてください。
 
+### summary.availableFundsManYen / survivalMonths / relevantExperienceLabel / relevantExperienceYears
+
+- `availableFundsManYen`: ユーザーが準備できる資金（貯金など）の目安（万円）。ヒアリング回答に貯金額の情報があればそれを使い、なければ入力条件から妥当な範囲で推定し、その旨を `limitations` に記載してください。根拠が全くない場合は `0` としてください。
+- `survivalMonths`: 上記の資金で、収入が途絶えた場合に生活を維持できるおおよその月数（`availableFundsManYen ÷ 想定月間生活費` の目安）。
+- `relevantExperienceLabel`: 検討している道に直接関係する経験の名称（例: 「いちご栽培経験」「飲食店の実務経験」「IT/プロダクト開発の経験」など、テーマに応じて具体的な名称にすること）。
+- `relevantExperienceYears`: 上記経験の年数（0でもよい）。
+
 ### currentPath.yearlyScenes / targetPaths[].yearlyScenes（y1 / y3 / y5）
 
 その道を進んだ場合の「1年後」「3年後」「5年後」の暮らしぶりを、具体的な情景として描写してください。
@@ -60,8 +67,8 @@
 
 ユーザーが「貯金額」「準備期間」「週に使える時間」「引っ越し可否」を変えたときに、そのパスの実現しやすさがどれくらい変わるかの目安の感度です。厳密な統計ではなく、そのパスの性質から見た相対的な傾向として設定してください。
 
-- `base`: 標準的な条件でのベースとなる実現しやすさの目安（0〜100）。
-- `savingsSensitivity` / `prepMonthsSensitivity` / `weeklyHoursSensitivity` / `relocationSensitivity`: それぞれの条件がどれだけ実現しやすさに影響するかの目安（0〜100、大きいほど影響が大きい）。
+- `base`: 標準的な条件でのベースとなる実現しやすさの目安（0〜100）。低リスク・低速な道ほど高く、高リスク・高速な道ほど低くするなど、3つの `targetPaths` の間で明確に差をつけてください（3件とも同じような値にしないこと）。
+- `savingsSensitivity` / `prepMonthsSensitivity` / `weeklyHoursSensitivity` / `relocationSensitivity`: それぞれの条件がどれだけ実現しやすさに影響するかの目安（0〜100、大きいほど影響が大きい）。これらは表示側で平均して緩やかに反映されるため、`base` の値ほど結果を左右しません。`base` の差付けを優先してください。
 
 ### targetPaths[].firstStep / plan
 
@@ -86,7 +93,15 @@
 
 ```json
 {
-  "summary": { "headline": "string", "comparisonConclusion": "string", "fitScore": 0 },
+  "summary": {
+    "headline": "string",
+    "comparisonConclusion": "string",
+    "fitScore": 0,
+    "availableFundsManYen": 0,
+    "survivalMonths": 0,
+    "relevantExperienceLabel": "string",
+    "relevantExperienceYears": 0
+  },
   "currentPath": {
     "title": "今のまま",
     "outlook": { "summary": "string", "evidence": ["string"] },

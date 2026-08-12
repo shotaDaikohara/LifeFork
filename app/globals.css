@@ -461,10 +461,12 @@ input[type=range]::-moz-range-thumb{
     background:var(--orange-lt);border-radius:10px;padding:9px 10px;margin-bottom:12px;color:var(--ink);
   }
   .mi-dream i{font-style:normal;font-size:14px;line-height:1.4;flex:none}
-  .mi-row{display:flex;justify-content:space-between;gap:8px;font-size:11px;line-height:1.7;padding:5px 2px;border-bottom:1px dashed var(--line)}
+  /* AI動的ヒアリングは質問文が文章形式で長くなりやすいため、UI案の横並び(dt/dd)から
+     縦積みに変更し、長文でも窮屈にならないようにしている。 */
+  .mi-row{display:block;font-size:11px;line-height:1.6;padding:6px 2px;border-bottom:1px dashed var(--line)}
   .mi-row:last-of-type{border-bottom:0}
-  .mi-row dt{color:var(--muted);flex:none;margin:0}
-  .mi-row dd{margin:0;font-weight:700;text-align:right;color:var(--ink-2)}
+  .mi-row dt{color:var(--muted);margin:0 0 2px}
+  .mi-row dd{margin:0;font-weight:700;color:var(--ink-2)}
   .mi-edit{
     width:100%;margin-top:11px;padding:8px;border-radius:9px;border:1px solid var(--line-2);
     background:#fff;font-size:11px;font-weight:700;color:var(--ink-2);transition:.14s;

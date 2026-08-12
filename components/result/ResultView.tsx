@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { Goal, InterviewAnswer, Profile, ResearchResult } from "@/types/research";
+import type { Goal, InterviewAnswer, ResearchResult } from "@/types/research";
 import { clearResultAndError } from "@/lib/researchSession";
 import { PathsSection } from "./PathsSection";
 import { TunerSection } from "./TunerSection";
@@ -22,12 +22,10 @@ const NAV_ITEMS = [
 
 export function ResultView({
   result,
-  profile,
   goal,
   answers,
 }: {
   result: ResearchResult;
-  profile: Profile;
   goal: Goal;
   answers: InterviewAnswer[];
 }) {
@@ -92,12 +90,6 @@ export function ResultView({
               {goal.description}
             </div>
             <dl style={{ margin: 0 }}>
-              {Object.entries(profile.fields).map(([key, value]) => (
-                <div className="mi-row" key={key}>
-                  <dt>{key}</dt>
-                  <dd>{value}</dd>
-                </div>
-              ))}
               {answers.map((a) => (
                 <div className="mi-row" key={a.questionId}>
                   <dt>{a.question ?? a.questionId}</dt>
@@ -137,29 +129,26 @@ export function ResultView({
                   </div>
                 </div>
                 <div className="fact">
-                  <div className="l">現在の年収</div>
+                  <div className="l">準備できるお金</div>
                   <div className="v">
-                    {Math.round(result.currentPath.income.current / 10000)}
+                    {result.summary.availableFundsManYen}
                     <small>万円</small>
                   </div>
                 </div>
-                {curPath && (
-                  <>
-                    <div className="fact">
-                      <div className="l">{curPath.title}｜3年後の年収</div>
-                      <div className="v">
-                        {Math.round(curPath.income.year3Base / 10000)}
-                        <small>万円</small>
-                      </div>
-                    </div>
-                    <div className="fact">
-                      <div className="l">おすすめの道</div>
-                      <div className="v" style={{ fontSize: 15 }}>
-                        {result.targetPaths.find((p) => p.recommended)?.title ?? "-"}
-                      </div>
-                    </div>
-                  </>
-                )}
+                <div className="fact">
+                  <div className="l">生活できる期間</div>
+                  <div className="v">
+                    {result.summary.survivalMonths}
+                    <small>か月</small>
+                  </div>
+                </div>
+                <div className="fact">
+                  <div className="l">{result.summary.relevantExperienceLabel}</div>
+                  <div className="v">
+                    {result.summary.relevantExperienceYears}
+                    <small>年</small>
+                  </div>
+                </div>
               </div>
             </div>
 

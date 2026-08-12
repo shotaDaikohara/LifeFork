@@ -5,8 +5,6 @@ import { useRouter } from "next/navigation";
 import type { GoalType } from "@/types/research";
 import { saveProfileAndGoal, clearResultAndError } from "@/lib/researchSession";
 
-const AGE_RANGES = ["20代前半", "20代後半", "30代前半", "30代後半", "40代", "50代以上"];
-
 const SUGGESTIONS: {
   emoji: string;
   bg: string;
@@ -41,16 +39,16 @@ const SUGGESTIONS: {
   },
 ];
 
+/**
+ * S01 入力（UI案 s-theme に準拠）。
+ * プロフィールの基本情報（年代・職種・経験年数・年収・貯金・家族構成・時期など）は
+ * ここでは尋ねず、AI動的ヒアリング（S02）側の質問に委ねる（UI案のCOMMON_Qに相当）。
+ */
 export default function InputPage() {
   const router = useRouter();
 
   const [goalDescription, setGoalDescription] = useState("");
   const [goalType, setGoalType] = useState<GoalType>("career_change");
-  const [name, setName] = useState("");
-  const [ageRange, setAgeRange] = useState("");
-  const [currentRole, setCurrentRole] = useState("");
-  const [yearsOfExperience, setYearsOfExperience] = useState("");
-  const [currentIncome, setCurrentIncome] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   function pickSuggestion(s: (typeof SUGGESTIONS)[number]) {
@@ -65,21 +63,9 @@ export default function InputPage() {
       setError("やってみたいことを入力してください。");
       return;
     }
-    if (!currentRole.trim()) {
-      setError("いまのお仕事を入力してください。");
-      return;
-    }
-
-    const fields: Record<string, string> = {
-      currentRole: currentRole.trim(),
-    };
-    if (name.trim()) fields.name = name.trim();
-    if (ageRange) fields.ageRange = ageRange;
-    if (yearsOfExperience.trim()) fields.yearsOfExperience = yearsOfExperience.trim();
-    if (currentIncome.trim()) fields.currentIncomeManYen = currentIncome.trim();
 
     clearResultAndError();
-    saveProfileAndGoal({ fields }, { type: goalType, description: goalDescription.trim() });
+    saveProfileAndGoal({ fields: {} }, { type: goalType, description: goalDescription.trim() });
     router.push("/interview");
   }
 
@@ -149,63 +135,6 @@ export default function InputPage() {
                 <div className="go">›</div>
               </button>
             ))}
-          </div>
-        </div>
-
-        <div className="card" style={{ marginTop: 26 }}>
-          <h3>もう少し、いまのことを教えてください</h3>
-          <p className="small">リサーチの土台になります</p>
-
-          <div className="fieldgrid">
-            <label className="field">
-              <span className="lb">お名前（任意・デモ表示用）</span>
-              <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="例: 山田 太郎" />
-            </label>
-
-            <label className="field">
-              <span className="lb">年代</span>
-              <select value={ageRange} onChange={(e) => setAgeRange(e.target.value)}>
-                <option value="">選択してください</option>
-                {AGE_RANGES.map((v) => (
-                  <option key={v} value={v}>
-                    {v}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="field full">
-              <span className="lb">
-                いまのお仕事<span className="req">*</span>
-              </span>
-              <input
-                type="text"
-                value={currentRole}
-                onChange={(e) => setCurrentRole(e.target.value)}
-                placeholder="例: SaaS企業の法人営業"
-              />
-            </label>
-
-            <label className="field">
-              <span className="lb">いまの職種での経験年数</span>
-              <input
-                type="text"
-                value={yearsOfExperience}
-                onChange={(e) => setYearsOfExperience(e.target.value)}
-                placeholder="例: 5年"
-              />
-            </label>
-
-            <label className="field">
-              <span className="lb">現在の年収（万円）</span>
-              <input
-                type="text"
-                inputMode="numeric"
-                value={currentIncome}
-                onChange={(e) => setCurrentIncome(e.target.value)}
-                placeholder="例: 550"
-              />
-            </label>
           </div>
         </div>
 

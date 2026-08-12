@@ -21,13 +21,19 @@ export function PathsSection({
   const [pointerLeft, setPointerLeft] = useState<number | null>(null);
 
   useEffect(() => {
-    const card = document.querySelector(`.pcard[data-p="${curPath.id}"]`) as HTMLElement | null;
-    const integ = integRef.current;
-    if (!card || !integ) return;
-    const c = card.getBoundingClientRect();
-    const p = integ.getBoundingClientRect();
-    if (!p.width) return;
-    setPointerLeft(Math.round(c.left + c.width / 2 - p.left));
+    function updatePointer() {
+      const card = document.querySelector(`.pcard[data-p="${curPath.id}"]`) as HTMLElement | null;
+      const integ = integRef.current;
+      if (!card || !integ) return;
+      const c = card.getBoundingClientRect();
+      const p = integ.getBoundingClientRect();
+      if (!p.width) return;
+      setPointerLeft(Math.round(c.left + c.width / 2 - p.left));
+    }
+    updatePointer();
+    // UI案同様、ウィンドウ幅が変わった際もカードと三角形の位置を追従させる。
+    window.addEventListener("resize", updatePointer);
+    return () => window.removeEventListener("resize", updatePointer);
   }, [curPath.id]);
 
   const scene: YearScene = curPath.yearlyScenes[year];

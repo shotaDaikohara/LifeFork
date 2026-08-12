@@ -8,6 +8,13 @@ import { loadGoal, loadProfile, saveAnswers } from "@/lib/researchSession";
 
 type Status = "loading" | "ready" | "error";
 
+// UI案 s-building（質問づくりのローディング演出）に対応するログ文言。
+const BUILD_LOG_LINES = [
+  "テーマを読みとっています",
+  "判断に効く項目を選定しています",
+  "関係のない質問を除外しています",
+];
+
 export default function InterviewPage() {
   const router = useRouter();
   const startedRef = useRef(false);
@@ -17,6 +24,17 @@ export default function InterviewPage() {
   const [qi, setQi] = useState(0);
   const [values, setValues] = useState<Record<string, string>>({});
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [goalDescription, setGoalDescription] = useState("");
+  const [buildLine, setBuildLine] = useState(0);
+  const [buildDone, setBuildDone] = useState(false);
+
+  useEffect(() => {
+    if (buildDone) return;
+    const id = setInterval(() => {
+      setBuildLine((i) => Math.min(i + 1, BUILD_LOG_LINES.length - 1));
+    }, 900);
+    return () => clearInterval(id);
+  }, [buildDone]);
 
   useEffect(() => {
     if (startedRef.current) return;
@@ -28,6 +46,9 @@ export default function InterviewPage() {
       router.replace("/");
       return;
     }
+    // sessionStorage (外部ストア) からの初期読み込みのため、effect内でのsetStateは意図的。
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setGoalDescription(goal.description);
 
     (async () => {
       try {
@@ -52,6 +73,9 @@ export default function InterviewPage() {
           err instanceof Error ? err.message : "質問の生成中に不明なエラーが発生しました。",
         );
         setStatus("error");
+      } finally {
+        setBuildLine(BUILD_LOG_LINES.length - 1);
+        setBuildDone(true);
       }
     })();
   }, [router]);
@@ -90,19 +114,31 @@ export default function InterviewPage() {
 
   if (status === "loading") {
     return (
-      <main className="stage loading">
+      <main className="stage narrow loading">
         <div className="spin">
           <i />
         </div>
         <div>
           <h2>
-            追加の質問を
+            「{goalDescription || "…"}」
             <br />
-            準備しています
+            を読みとっています
           </h2>
           <p className="small" style={{ marginTop: 8 }}>
-            入力内容をもとに、リサーチに必要な質問を最大4問選んでいます
+            この夢の判断に必要な質問だけを選びます
           </p>
+        </div>
+        <div className="log">
+          {BUILD_LOG_LINES.map((line, i) => {
+            const isDone = buildDone || i < buildLine;
+            const isOn = i <= buildLine;
+            return (
+              <div key={line} className={`${isOn ? "on" : ""} ${isDone ? "done" : ""}`}>
+                <span className="ic">{isDone ? "✓" : "▸"}</span>
+                <span>{line}</span>
+              </div>
+            );
+          })}
         </div>
       </main>
     );

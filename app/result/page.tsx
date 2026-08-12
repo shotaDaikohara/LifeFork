@@ -93,7 +93,7 @@ export default function ResultPage() {
 
   return (
     <main className="stage">
-      <ResultView result={data.result} profile={data.profile} goal={data.goal} answers={data.answers} />
+      <ResultView result={data.result} goal={data.goal} answers={data.answers} />
     </main>
   );
 }

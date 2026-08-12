@@ -25,15 +25,28 @@ const MAX_SAVINGS = 2000;
 const MAX_PREP_MONTHS = 36;
 const MAX_WEEKLY_HOURS = 30;
 
-/** そのパスの「うまくいく確率」の目安（5〜95） */
+/**
+ * そのパスの「うまくいく確率」の目安（5〜95）。
+ *
+ * AIが生成する4つの sensitivity は互いに独立した0-100の値であり、単純合算すると
+ * 容易に100を超えて全パスが95にクランプされてしまう（2026-08-12 実機確認で発覚）。
+ * そのため平均を取ったうえでさらに1/2に抑え、base同士の差が結果を支配しやすくする
+ * （UI案のTUNE係数も、手動調整により base の差が主な決め手になっていた）。
+ */
 export function rateOf(tune: TuneFactors, c: Conditions): number {
-  const raw =
-    tune.base +
-    tune.savingsSensitivity * (c.savings / MAX_SAVINGS) +
-    tune.prepMonthsSensitivity * (c.prepMonths / MAX_PREP_MONTHS) +
-    tune.weeklyHoursSensitivity * (c.weeklyHours / MAX_WEEKLY_HOURS) +
-    (c.relocation ? tune.relocationSensitivity : 0);
-  return Math.max(5, Math.min(95, raw));
+  const savingsRatio = c.savings / MAX_SAVINGS;
+  const prepRatio = c.prepMonths / MAX_PREP_MONTHS;
+  const hoursRatio = c.weeklyHours / MAX_WEEKLY_HOURS;
+  const relocationRatio = c.relocation ? 1 : 0;
+
+  const weightedContribution =
+    (tune.savingsSensitivity * savingsRatio +
+      tune.prepMonthsSensitivity * prepRatio +
+      tune.weeklyHoursSensitivity * hoursRatio +
+      tune.relocationSensitivity * relocationRatio) /
+    8;
+
+  return Math.max(5, Math.min(95, tune.base + weightedContribution));
 }
 
 /**

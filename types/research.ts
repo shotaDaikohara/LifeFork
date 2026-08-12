@@ -212,8 +212,13 @@ export type Source = z.infer<typeof sourceSchema>;
 export const summarySchema = z.object({
   headline: z.string(),
   comparisonConclusion: z.string(),
-  // 「いま向いてる度」。設計書10章の方針とは矛盾するが、UI案要求によりユーザー判断で追加。
+  // 以下4項目はUI案の verdict.facts（いま向いてる度／準備できるお金／生活できる期間／経験）に対応。
+  // 設計書10章の「疑似精密スコアを持たせない」方針とは矛盾するが、UI案要求によりユーザー判断で追加。
   fitScore: z.number().min(0).max(100),
+  availableFundsManYen: z.number().min(0),
+  survivalMonths: z.number().min(0),
+  relevantExperienceLabel: z.string(),
+  relevantExperienceYears: z.number().min(0),
 });
 export type Summary = z.infer<typeof summarySchema>;
 
