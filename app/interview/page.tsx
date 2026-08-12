@@ -14,9 +14,9 @@ export default function InterviewPage() {
 
   const [status, setStatus] = useState<Status>("loading");
   const [questions, setQuestions] = useState<InterviewQuestion[]>([]);
+  const [qi, setQi] = useState(0);
   const [values, setValues] = useState<Record<string, string>>({});
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
     if (startedRef.current) return;
@@ -56,39 +56,52 @@ export default function InterviewPage() {
     })();
   }, [router]);
 
-  function handleChange(id: string, value: string) {
-    setValues((prev) => ({ ...prev, [id]: value }));
-  }
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-
-    for (const q of questions) {
-      if (q.required && !values[q.id]?.trim()) {
-        setFormError(`「${q.label}」は必須項目です。`);
-        return;
-      }
-    }
-
+  function finish(finalValues: Record<string, string>) {
     const answers: InterviewAnswer[] = questions
-      .filter((q) => values[q.id]?.trim())
-      .map((q) => ({ questionId: q.id, question: q.label, answer: values[q.id].trim() }));
-
+      .filter((q) => finalValues[q.id]?.trim())
+      .map((q) => ({ questionId: q.id, question: q.label, answer: finalValues[q.id].trim() }));
     saveAnswers(answers);
     router.push("/researching");
   }
 
+  function goNext(finalValues: Record<string, string>) {
+    if (qi < questions.length - 1) {
+      setQi(qi + 1);
+      window.scrollTo(0, 0);
+    } else {
+      finish(finalValues);
+    }
+  }
+
+  function answer(id: string, value: string) {
+    const next = { ...values, [id]: value };
+    setValues(next);
+    setTimeout(() => goNext(next), 220);
+  }
+
+  function skipQ() {
+    goNext(values);
+  }
+
+  function prevQ() {
+    if (qi > 0) setQi(qi - 1);
+    else router.push("/");
+  }
+
   if (status === "loading") {
     return (
-      <main className="flex flex-1 flex-col items-center justify-center px-4 py-16 text-center">
-        <p className="text-sm font-medium text-indigo-600">STEP 2 / 4</p>
-        <h1 className="mt-1 text-2xl font-bold tracking-tight text-zinc-900">
-          追加の質問を準備しています
-        </h1>
-        <div className="mt-8 flex items-center gap-3">
-          <span className="h-5 w-5 animate-spin rounded-full border-2 border-indigo-200 border-t-indigo-600" />
-          <p className="text-sm text-zinc-600">
-            入力内容をもとに、リサーチに必要な質問を最大4問生成しています…
+      <main className="stage loading">
+        <div className="spin">
+          <i />
+        </div>
+        <div>
+          <h2>
+            追加の質問を
+            <br />
+            準備しています
+          </h2>
+          <p className="small" style={{ marginTop: 8 }}>
+            入力内容をもとに、リサーチに必要な質問を最大4問選んでいます
           </p>
         </div>
       </main>
@@ -97,26 +110,18 @@ export default function InterviewPage() {
 
   if (status === "error") {
     return (
-      <main className="flex flex-1 flex-col items-center justify-center px-4 py-16 text-center">
-        <p className="text-sm font-medium text-indigo-600">STEP 2 / 4</p>
-        <h1 className="mt-1 text-2xl font-bold tracking-tight text-zinc-900">
-          質問の生成に失敗しました
-        </h1>
-        <p className="mt-3 max-w-md text-sm text-red-600">{loadError}</p>
-        <div className="mt-8 flex gap-3">
-          <button className="btn-secondary" onClick={() => router.push("/")}>
+      <main className="stage loading">
+        <div>
+          <h2>質問の準備に失敗しました</h2>
+          <p className="small" style={{ marginTop: 8, color: "var(--berry)" }}>
+            {loadError}
+          </p>
+        </div>
+        <div style={{ display: "flex", gap: 12 }}>
+          <button className="btn ghost auto" onClick={() => router.push("/")}>
             入力からやり直す
           </button>
-          <button
-            className="btn-primary"
-            onClick={() => {
-              startedRef.current = false;
-              setStatus("loading");
-              setLoadError(null);
-              // 再マウントと同等の効果を得るため簡易的にリロードする。
-              window.location.reload();
-            }}
-          >
+          <button className="btn auto" onClick={() => window.location.reload()}>
             もう一度試す
           </button>
         </div>
@@ -124,86 +129,125 @@ export default function InterviewPage() {
     );
   }
 
-  return (
-    <main className="flex flex-1 justify-center px-4 py-10 sm:py-16">
-      <div className="w-full max-w-xl">
-        <p className="text-sm font-medium text-indigo-600">STEP 2 / 4</p>
-        <h1 className="mt-1 text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
-          もう少し詳しく教えてください
-        </h1>
-        <p className="mt-2 text-sm text-zinc-600">
-          入力内容をもとにAIが生成した質問です。回答は任意項目も含まれます。
-        </p>
+  if (questions.length === 0) {
+    return (
+      <main className="stage narrow" style={{ paddingTop: 26 }}>
+        <div className="ai">
+          <div className="face">🍴</div>
+          <div className="bub">
+            追加で確認すべきことは見つかりませんでした。
+            <br />
+            このままリサーチに進めます。
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 12, marginTop: 20 }}>
+          <button className="btn ghost auto" onClick={() => router.push("/")}>
+            戻る
+          </button>
+          <button className="btn" style={{ flex: 1 }} onClick={() => finish(values)}>
+            リサーチを開始する
+          </button>
+        </div>
+      </main>
+    );
+  }
 
-        {questions.length === 0 ? (
-          <div className="mt-8 space-y-6">
-            <p className="text-sm text-zinc-600">
-              追加で確認すべき不足条件は見つかりませんでした。このままリサーチに進めます。
-            </p>
-            <div className="flex gap-3">
-              <button className="btn-secondary" onClick={() => router.push("/")}>
-                戻る
-              </button>
+  const q = questions[qi];
+  const progress = (qi / questions.length) * 100;
+
+  return (
+    <main className="stage narrow">
+      <div className="qhead">
+        <button className="back" onClick={prevQ} aria-label="前の質問へ">
+          ←
+        </button>
+        <div className="progress">
+          <div className="bar">
+            <i style={{ width: `${progress}%` }} />
+          </div>
+          <div className="lb">
+            <span>
+              {qi + 1}問目 / {questions.length}問
+            </span>
+            <span>{qi === questions.length - 1 ? "これで最後です" : `あと${questions.length - qi - 1}問`}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="qcard">
+        <div className="qwhy">
+          <span className="ic">💡</span>
+          <span>{q.why}</span>
+        </div>
+        <div className="qtitle">{q.label}</div>
+
+        {q.type === "single_select" ? (
+          <div className="opts">
+            {q.options.map((opt) => (
               <button
-                className="btn-primary flex-1"
-                onClick={() => {
-                  saveAnswers([]);
-                  router.push("/researching");
-                }}
+                key={opt}
+                className={`opt ${values[q.id] === opt ? "on" : ""}`}
+                onClick={() => answer(q.id, opt)}
               >
-                リサーチを開始する
+                <span>{opt}</span>
+                <span className="ck">{values[q.id] === opt ? "✓" : ""}</span>
               </button>
-            </div>
+            ))}
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="mt-8 space-y-6">
-            {questions.map((q) => (
-              <label key={q.id} className="block">
-                <span className="mb-1 block text-sm text-zinc-700">
-                  {q.label}
-                  {q.required && <span className="ml-1 text-red-500">*</span>}
-                </span>
-                {q.type === "text" && (
-                  <input
-                    className="input"
-                    value={values[q.id] ?? ""}
-                    onChange={(e) => handleChange(q.id, e.target.value)}
-                  />
-                )}
-                {q.type === "single_select" && (
-                  <select
-                    className="input"
-                    value={values[q.id] ?? ""}
-                    onChange={(e) => handleChange(q.id, e.target.value)}
-                  >
-                    <option value="">選択してください</option>
-                    {q.options.map((opt) => (
-                      <option key={opt} value={opt}>
-                        {opt}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </label>
-            ))}
-
-            {formError && <p className="text-sm text-red-600">{formError}</p>}
-
-            <div className="flex gap-3">
-              <button
-                type="button"
-                className="btn-secondary"
-                onClick={() => router.push("/")}
-              >
-                戻る
-              </button>
-              <button type="submit" className="btn-primary flex-1">
-                リサーチを開始する
-              </button>
-            </div>
-          </form>
+          <TextAnswer
+            key={q.id}
+            initial={values[q.id] ?? ""}
+            required={q.required}
+            onSubmit={(value) => answer(q.id, value)}
+          />
         )}
+
+        <div className="qskip">
+          <button className="textlink" onClick={skipQ}>
+            わからない・答えたくない
+          </button>
+        </div>
       </div>
+
+      <p className="tiny" style={{ textAlign: "center", marginTop: 16 }}>
+        答えなかった項目は、同じ条件の人の平均でAIが補います
+      </p>
     </main>
+  );
+}
+
+function TextAnswer({
+  initial,
+  required,
+  onSubmit,
+}: {
+  initial: string;
+  required: boolean;
+  onSubmit: (value: string) => void;
+}) {
+  const [text, setText] = useState(initial);
+
+  function submit() {
+    if (required && !text.trim()) return;
+    onSubmit(text.trim());
+  }
+
+  return (
+    <div className="field">
+      <input
+        type="text"
+        autoFocus
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") submit();
+        }}
+        placeholder="回答を入力"
+      />
+      <button className="btn" style={{ marginTop: 14 }} onClick={submit}>
+        次へ
+      </button>
+    </div>
   );
 }

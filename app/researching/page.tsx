@@ -11,24 +11,27 @@ import {
   saveResult,
 } from "@/lib/researchSession";
 
-const PROGRESS_MESSAGES = [
-  "将来性を調査しています…",
-  "収入水準を調査しています…",
-  "実現手段を整理しています…",
-  "主要リスクを整理しています…",
+const LOG_LINES = [
+  "実際の制度・相場を確認しています",
+  "似た条件の事例を集めています",
+  "収入レンジと必要な準備を整理しています",
+  "進める道の候補を組み立てています",
+  "リスクと対策を整理しています",
 ];
 
 export default function ResearchingPage() {
   const router = useRouter();
   const startedRef = useRef(false);
-  const [messageIndex, setMessageIndex] = useState(0);
+  const [activeLine, setActiveLine] = useState(0);
+  const [done, setDone] = useState(false);
 
   useEffect(() => {
+    if (done) return;
     const id = setInterval(() => {
-      setMessageIndex((i) => (i + 1) % PROGRESS_MESSAGES.length);
-    }, 2200);
+      setActiveLine((i) => Math.min(i + 1, LOG_LINES.length - 1));
+    }, 2600);
     return () => clearInterval(id);
-  }, []);
+  }, [done]);
 
   useEffect(() => {
     if (startedRef.current) return;
@@ -64,24 +67,41 @@ export default function ResearchingPage() {
       } catch (err) {
         saveError(err instanceof Error ? err.message : "リサーチ中に不明なエラーが発生しました。");
       } finally {
-        router.push("/result");
+        setActiveLine(LOG_LINES.length - 1);
+        setDone(true);
+        setTimeout(() => router.push("/result"), 500);
       }
     })();
   }, [router]);
 
   return (
-    <main className="flex flex-1 flex-col items-center justify-center px-4 py-16 text-center">
-      <p className="text-sm font-medium text-indigo-600">STEP 3 / 4</p>
-      <h1 className="mt-1 text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
-        リサーチ中です
-      </h1>
-      <div className="mt-8 flex items-center gap-3">
-        <span className="h-5 w-5 animate-spin rounded-full border-2 border-indigo-200 border-t-indigo-600" />
-        <p className="text-sm text-zinc-600">{PROGRESS_MESSAGES[messageIndex]}</p>
+    <main className="stage narrow loading">
+      <div className="spin">
+        <i />
       </div>
-      <p className="mt-10 max-w-sm text-xs text-zinc-400">
-        表示内容は目安であり、実際の処理状況と厳密に同期しているものではありません。
-      </p>
+      <div>
+        <h2>
+          あなたの未来を
+          <br />
+          調べています
+        </h2>
+        <p className="small" style={{ marginTop: 8 }}>
+          実際の制度・相場・失敗例をあたっています
+        </p>
+      </div>
+      <div className="log">
+        {LOG_LINES.map((line, i) => {
+          const isDone = done || i < activeLine;
+          const isOn = i <= activeLine;
+          return (
+            <div key={line} className={`${isOn ? "on" : ""} ${isDone ? "done" : ""}`}>
+              <span className="ic">{isDone ? "✓" : "▸"}</span>
+              <span>{line}</span>
+            </div>
+          );
+        })}
+      </div>
+      <p className="tiny">だいたい30秒くらいで終わります</p>
     </main>
   );
 }

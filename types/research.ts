@@ -3,9 +3,21 @@ import { z } from "zod";
 /**
  * LifeFork ドメイン型定義
  *
- * 設計書「LifeFork_システム基本設計_v0.3」 8章・10章に対応。
+ * 設計書「LifeFork_システム基本設計_v0.4」 8章・10章をベースに、
+ * UI案 (lifefork_demo.html, 2026-08-12) の情報構造へ拡張したもの。
  * zod スキーマを単一の情報源とし、型はスキーマから推論する。
  * ワイヤーフレーム未確定のため profile.fields は自由なキー/値を許容する。
+ *
+ * v10設計からの主な拡張（UI案対応）:
+ * - targetPath (単数) → targetPaths (3件固定: 「進める道」A/B/C)
+ * - 各パスに年次推移シーン(yearlyScenes: y1/y3/y5)を追加
+ * - 各 targetPath に条件シミュレーション係数(tuneFactors)を追加
+ *   （UI案のスライダー「貯金/準備期間/週の時間/引っ越し可否」を動かした際の
+ *   フロントエンド側での近似再計算に使う。AIが出す値はあくまで目安の感度。）
+ * - summary.fitScore ( 0-100の「いま向いてる度」) を追加。
+ *   設計書10章は「将来性70点のような根拠の弱い疑似精密スコアは持たせない」と
+ *   明記しているが、UI案の要求により明示的に追加した。ユーザー判断による例外。
+ * - checks (足りているもの/足りないもの) を追加
  *
  * ヒアリング質問 (InterviewQuestion) は v0.3 で AI 動的生成に変更されたため
  * types/interview.ts で定義する。本ファイルの Profile / Goal / GoalType は
@@ -48,7 +60,7 @@ export const researchRequestSchema = z.object({
 export type ResearchRequest = z.infer<typeof researchRequestSchema>;
 
 // ---------------------------------------------------------------------------
-// Response: ResearchResult (設計書 10章)
+// Response: ResearchResult (設計書10章 + UI案拡張)
 // ---------------------------------------------------------------------------
 
 export const likelihoodSchema = z.enum(["low", "medium", "high", "unknown"]);
@@ -88,23 +100,107 @@ export const targetIncomeSchema = z.object({
 });
 export type TargetIncome = z.infer<typeof targetIncomeSchema>;
 
+// ---- 年次推移シーン（UI案「1年後/3年後/5年後」演出） ----
+
+export const yearSceneStatSchema = z.object({
+  label: z.string(),
+  value: z.string(),
+});
+export type YearSceneStat = z.infer<typeof yearSceneStatSchema>;
+
+export const yearSceneSchema = z.object({
+  headline: z.string(),
+  narrative: z.string(),
+  stats: z.array(yearSceneStatSchema).min(1).max(6),
+});
+export type YearScene = z.infer<typeof yearSceneSchema>;
+
+export const yearlyScenesSchema = z.object({
+  y1: yearSceneSchema,
+  y3: yearSceneSchema,
+  y5: yearSceneSchema,
+});
+export type YearlyScenes = z.infer<typeof yearlyScenesSchema>;
+
+// ---- 条件シミュレーション係数（UI案スライダーの近似再計算用、目安値） ----
+
+export const tuneFactorsSchema = z.object({
+  base: z.number().min(0).max(100),
+  savingsSensitivity: z.number().min(0).max(100),
+  prepMonthsSensitivity: z.number().min(0).max(100),
+  weeklyHoursSensitivity: z.number().min(0).max(100),
+  relocationSensitivity: z.number().min(0).max(100),
+});
+export type TuneFactors = z.infer<typeof tuneFactorsSchema>;
+
+export const pathMetricSchema = z.object({
+  label: z.string(),
+  value: z.string(),
+});
+export type PathMetric = z.infer<typeof pathMetricSchema>;
+
+// ---- グラフ用の数値系列（UI案の年収/貯金/夢への近さ/満足度の推移グラフ用） ----
+// yearlyScenes.stats は表示用の自由なラベル文字列だが、グラフ描画には厳密な
+// 数値配列が必要なため、[いま, 1年後, 3年後, 5年後] の4点で別途持たせる。
+export const trendSeriesSchema = z.object({
+  income: z.array(z.number()).length(4),
+  savings: z.array(z.number()).length(4),
+  dreamCloseness: z.array(z.number().min(0).max(100)).length(4),
+  satisfaction: z.array(z.number().min(0).max(100)).length(4),
+});
+export type TrendSeries = z.infer<typeof trendSeriesSchema>;
+
+export const firstStepSchema = z.object({
+  headline: z.string(),
+  body: z.string(),
+});
+export type FirstStep = z.infer<typeof firstStepSchema>;
+
+export const planStepSchema = z.object({
+  period: z.string(),
+  title: z.string(),
+  detail: z.string(),
+});
+export type PlanStep = z.infer<typeof planStepSchema>;
+
+// ---- パス本体 ----
+
 export const currentPathSchema = z.object({
   title: z.string(),
   outlook: outlookSchema,
   income: currentIncomeSchema,
   steps: z.array(z.string()).default([]),
   risks: z.array(riskSchema).default([]),
+  yearlyScenes: yearlyScenesSchema,
+  series: trendSeriesSchema,
 });
 export type CurrentPath = z.infer<typeof currentPathSchema>;
 
 export const targetPathSchema = z.object({
+  id: z.string().min(1),
   title: z.string(),
+  tagline: z.string(),
+  recommended: z.boolean().default(false),
   outlook: outlookSchema,
   income: targetIncomeSchema,
   steps: z.array(z.string()).default([]),
   risks: z.array(riskSchema).default([]),
+  metrics: z.array(pathMetricSchema).min(2).max(4),
+  detail: z.string(),
+  yearlyScenes: yearlyScenesSchema,
+  series: trendSeriesSchema,
+  tuneFactors: tuneFactorsSchema,
+  firstStep: firstStepSchema,
+  plan: z.array(planStepSchema).min(3).max(6),
 });
 export type TargetPath = z.infer<typeof targetPathSchema>;
+
+export const checkItemSchema = z.object({
+  status: z.enum(["ok", "ng"]),
+  title: z.string(),
+  detail: z.string(),
+});
+export type CheckItem = z.infer<typeof checkItemSchema>;
 
 export const sourceSchema = z.object({
   title: z.string(),
@@ -116,13 +212,17 @@ export type Source = z.infer<typeof sourceSchema>;
 export const summarySchema = z.object({
   headline: z.string(),
   comparisonConclusion: z.string(),
+  // 「いま向いてる度」。設計書10章の方針とは矛盾するが、UI案要求によりユーザー判断で追加。
+  fitScore: z.number().min(0).max(100),
 });
 export type Summary = z.infer<typeof summarySchema>;
 
 export const researchResultSchema = z.object({
   summary: summarySchema,
   currentPath: currentPathSchema,
-  targetPath: targetPathSchema,
+  // UI案は「今のまま」+ 進める道3つ(A/B/C)固定で構成される。
+  targetPaths: z.array(targetPathSchema).length(3),
+  checks: z.array(checkItemSchema).min(3).max(8),
   sources: z.array(sourceSchema).default([]),
   limitations: z.array(z.string()).default([]),
 });

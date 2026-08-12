@@ -2,6 +2,7 @@ import OpenAI from "openai";
 import { z } from "zod";
 import { researchResultSchema } from "@/types/research";
 import { interviewResponseSchema } from "@/types/interview";
+import { factFindingResponseSchema } from "@/types/factFinding";
 import { ResearchError } from "@/lib/errors";
 
 /**
@@ -22,17 +23,27 @@ import { ResearchError } from "@/lib/errors";
 
 const DEFAULT_BASE_URL = "https://api.orcarouter.ai/v1";
 const DEFAULT_MODEL = "orcarouter/auto";
-const DEFAULT_TIMEOUT_MS = 55_000;
+const DEFAULT_TIMEOUT_MS = 45_000;
+// Pass1(基礎調査)は軽量出力想定のため短めに設定し、Vercel maxDuration(60s)内で
+// Pass1 + Pass2 の合計が収まるようにする。
+const DEFAULT_FACT_TIMEOUT_MS = 15_000;
 
 function getEnv() {
   const apiKey = process.env.ORCAROUTER_API_KEY;
   const baseURL = process.env.ORCAROUTER_BASE_URL || DEFAULT_BASE_URL;
   const model = process.env.ORCAROUTER_MODEL || DEFAULT_MODEL;
+  // 基礎調査 (Pass1) 専用モデル。search系モデルは出力トークンが実測1,000〜1,500程度に
+  // 制限されており、3道比較を含む大きな ResearchResult (Pass2) を直接生成させると
+  // 出力が途中で切れる (2026-08-12 実測)。そのため Web Search はこの軽量な事実調査
+  // ステップのみで使い、詳細生成は常に Web Search なしの ORCAROUTER_MODEL で行う。
+  // 未設定の場合は基礎調査自体をスキップする。
+  const factModel = process.env.ORCAROUTER_FACT_MODEL || undefined;
   const timeoutMs = Number(process.env.ORCAROUTER_TIMEOUT_MS) || DEFAULT_TIMEOUT_MS;
+  const factTimeoutMs = Number(process.env.ORCAROUTER_FACT_TIMEOUT_MS) || DEFAULT_FACT_TIMEOUT_MS;
   // 設計書9.5章: Web Searchの実発火をモデル/ルートごとに確認したうえで有効化する。
   // 対応が未確認のモデルではデフォルトで無効。
   const webSearchEnabled = process.env.ORCAROUTER_WEB_SEARCH === "true";
-  return { apiKey, baseURL, model, timeoutMs, webSearchEnabled };
+  return { apiKey, baseURL, model, factModel, timeoutMs, factTimeoutMs, webSearchEnabled };
 }
 
 export function isOrcaRouterConfigured(): boolean {
@@ -40,11 +51,12 @@ export function isOrcaRouterConfigured(): boolean {
 }
 
 export function orcaRouterHealthInfo() {
-  const { baseURL, model, webSearchEnabled } = getEnv();
+  const { baseURL, model, factModel, webSearchEnabled } = getEnv();
   return {
     configured: isOrcaRouterConfigured(),
     baseUrl: baseURL,
     model,
+    factModel: factModel ?? null,
     webSearchEnabled,
   };
 }
@@ -78,6 +90,7 @@ function toJsonSchema(schema: z.core.$ZodType): Record<string, unknown> {
 
 const researchResultJsonSchema = toJsonSchema(researchResultSchema);
 const interviewResponseJsonSchema = toJsonSchema(interviewResponseSchema);
+const factFindingJsonSchema = toJsonSchema(factFindingResponseSchema);
 
 export interface ChatMessages {
   system: string;
@@ -87,8 +100,12 @@ export interface ChatMessages {
 interface StructuredCompletionOptions {
   schemaName: string;
   jsonSchema: Record<string, unknown>;
-  /** Web Search を付与するか。質問生成 (interview) では不要なため research のみ true にする。 */
+  /** Web Search を付与するか。詳細生成 (research/interview) では出力上限の制約により使わない。 */
   useWebSearch?: boolean;
+  /** モデルのオーバーライド。省略時は ORCAROUTER_MODEL を使う（基礎調査のみ ORCAROUTER_FACT_MODEL を使う）。 */
+  model?: string;
+  /** タイムアウトのオーバーライド (ms)。省略時は ORCAROUTER_TIMEOUT_MS を使う。 */
+  timeoutMs?: number;
 }
 
 /**
@@ -99,10 +116,12 @@ interface StructuredCompletionOptions {
  */
 async function requestStructuredCompletion(
   messages: ChatMessages,
-  { schemaName, jsonSchema, useWebSearch }: StructuredCompletionOptions,
+  { schemaName, jsonSchema, useWebSearch, model: modelOverride, timeoutMs: timeoutOverride }: StructuredCompletionOptions,
   retryHint?: string,
 ): Promise<string> {
-  const { model, webSearchEnabled } = getEnv();
+  const { model: defaultModel, webSearchEnabled, timeoutMs: defaultTimeoutMs } = getEnv();
+  const model = modelOverride ?? defaultModel;
+  const requestTimeoutMs = timeoutOverride ?? defaultTimeoutMs;
   const openai = getClient();
 
   const chatMessages: OpenAI.Chat.ChatCompletionMessageParam[] = [
@@ -117,28 +136,34 @@ async function requestStructuredCompletion(
   const webSearchParams = useWebSearch && webSearchEnabled ? { web_search_options: {} } : {};
 
   const attemptWithSchema = async () => {
-    return openai.chat.completions.create({
-      model,
-      messages: chatMessages,
-      ...webSearchParams,
-      response_format: {
-        type: "json_schema",
-        json_schema: {
-          name: schemaName,
-          schema: jsonSchema,
-          strict: false,
+    return openai.chat.completions.create(
+      {
+        model,
+        messages: chatMessages,
+        ...webSearchParams,
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: schemaName,
+            schema: jsonSchema,
+            strict: false,
+          },
         },
       },
-    });
+      { timeout: requestTimeoutMs },
+    );
   };
 
   const attemptWithJsonObject = async () => {
-    return openai.chat.completions.create({
-      model,
-      messages: chatMessages,
-      ...webSearchParams,
-      response_format: { type: "json_object" },
-    });
+    return openai.chat.completions.create(
+      {
+        model,
+        messages: chatMessages,
+        ...webSearchParams,
+        response_format: { type: "json_object" },
+      },
+      { timeout: requestTimeoutMs },
+    );
   };
 
   let response;
@@ -164,7 +189,10 @@ async function requestStructuredCompletion(
 }
 
 /**
- * OrcaRouter へ ResearchResult 生成を依頼する。設計書 9章 / 10章に対応。
+ * OrcaRouter へ ResearchResult 生成 (Pass2: 詳細生成) を依頼する。設計書 9章 / 10章に対応。
+ * search系モデルの出力上限制約を回避するため、常に ORCAROUTER_MODEL (Web Searchなし)
+ * で呼び出す。最新情報は Pass1 (requestFactFindingCompletion) の結果を
+ * PromptBuilder 経由でプロンプトに埋め込むことで補う。
  */
 export async function requestResearchCompletion(
   messages: ChatMessages,
@@ -172,9 +200,34 @@ export async function requestResearchCompletion(
 ): Promise<string> {
   return requestStructuredCompletion(
     messages,
-    { schemaName: "research_result", jsonSchema: researchResultJsonSchema, useWebSearch: true },
+    { schemaName: "research_result", jsonSchema: researchResultJsonSchema, useWebSearch: false },
     retryHint,
   );
+}
+
+/**
+ * OrcaRouter へ基礎調査 (Pass1) を依頼する。ORCAROUTER_FACT_MODEL が未設定の場合は
+ * 呼び出し元 (ResearchController) でスキップされる想定。
+ */
+export function isFactFindingConfigured(): boolean {
+  return Boolean(getEnv().factModel);
+}
+
+export async function requestFactFindingCompletion(messages: ChatMessages): Promise<string> {
+  const { factModel, factTimeoutMs } = getEnv();
+  if (!factModel) {
+    throw new ResearchError(
+      "internal_error",
+      "ORCAROUTER_FACT_MODEL が設定されていません。",
+    );
+  }
+  return requestStructuredCompletion(messages, {
+    schemaName: "fact_finding",
+    jsonSchema: factFindingJsonSchema,
+    useWebSearch: true,
+    model: factModel,
+    timeoutMs: factTimeoutMs,
+  });
 }
 
 /**

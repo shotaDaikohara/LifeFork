@@ -1,31 +1,25 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Noto_Sans_JP } from "next/font/google";
 import { Header } from "@/components/Header";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const notoSansJp = Noto_Sans_JP({
+  variable: "--font-noto-sans-jp",
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  weight: ["400", "500", "700", "900"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "LifeFork | 転職・独立の未来を比較する",
+  title: "LifeFork | 人生分岐AI",
   description:
-    "今の道を続けた未来と、転職・独立に進んだ未来を、将来性・年収・実現手段・リスクで比較するリサーチプロトタイプ。",
+    "転職や独立、ふと思いついたその道に進んだ未来と、今のままの未来をAIが調べて並べます。",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html
-      lang="ja"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col bg-zinc-50 text-zinc-900">
+    <html lang="ja" className={`${notoSansJp.variable}`}>
+      <body>
         <Header />
         {children}
       </body>

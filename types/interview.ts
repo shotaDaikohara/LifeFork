@@ -18,6 +18,8 @@ export const interviewQuestionSchema = z
   .object({
     id: z.string().min(1),
     label: z.string().min(1),
+    // UI案の「なぜこれを聞くか」吹き出し用。設計書8.1章の型にはないが単純増加として追加。
+    why: z.string().min(1),
     type: interviewQuestionTypeSchema,
     options: z.array(z.string()).default([]),
     required: z.boolean().default(false),

@@ -1,218 +1,1832 @@
 <!doctype html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>LifeFork | 比較結果サンプル（チャンピオンデータ）</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LifeFork — 人生分岐AI（発表用サンプル）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --zinc-50: #fafafa; --zinc-100: #f4f4f5; --zinc-200: #e4e4e7; --zinc-300: #d4d4d8;
-    --zinc-400: #a1a1aa; --zinc-500: #71717a; --zinc-600: #52525b; --zinc-700: #3f3f46;
-    --zinc-900: #18181b; --indigo-50: #eef2ff; --indigo-100: #e0e7ff; --indigo-600: #4f46e5;
-    --indigo-700: #4338ca; --amber-50: #fffbeb; --amber-200: #fde68a; --amber-800: #92400e;
-    --emerald-50: #ecfdf5; --emerald-700: #047857; --red-50: #fef2f2; --red-700: #b91c1c;
+:root{
+  --cream:#FAF8F5;
+  --paper:#FFFFFF;
+  --ink:#2B2723;
+  --ink-2:#5A534C;
+  --muted:#8C857D;
+  --line:#EAE5DE;
+  --line-2:#DBD4CB;
+  --orange:#E8681C;
+  --orange-dk:#C4520E;
+  --orange-lt:#FCF1E8;
+  --mint:#2A9D74;
+  --mint-lt:#EAF4F0;
+  --sky:#3F86C4;
+  --sky-lt:#EDF3F8;
+  --berry:#D4405F;
+  --berry-lt:#FBEDF0;
+  --sun:#D99B12;
+  --sun-lt:#FBF4E4;
+  --shadow:0 6px 22px rgba(60,50,40,.08);
+  --shadow-sm:0 2px 8px rgba(60,50,40,.055);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:
+    radial-gradient(900px 480px at 8% -6%, #F8F4EE 0%, transparent 62%),
+    radial-gradient(760px 420px at 96% -2%, #FCF2E8 0%, transparent 58%),
+    var(--cream);
+  color:var(--ink);
+  font-family:"Noto Sans JP","Noto Sans",-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans",sans-serif;
+  font-size:16px;line-height:1.75;
+  -webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit;font-size:inherit;color:inherit;border:0;background:none;cursor:pointer}
+input,textarea{font-family:inherit;font-size:16px;color:inherit}
+
+/* ============ レイアウト ============ */
+.stage{min-height:100vh;display:none;padding:0 20px 120px}
+.stage.on{display:block}
+.narrow{width:min(100%,560px);margin:0 auto}
+.wide{width:min(100%,1180px);margin:0 auto}
+
+/* ============ ヘッダ ============ */
+.topbar{
+  position:sticky;top:0;z-index:40;background:rgba(250,248,245,.94);
+  backdrop-filter:blur(10px);border-bottom:1px solid var(--line);
+  padding:12px 20px;display:none;align-items:center;gap:12px;
+}
+.topbar.on{display:flex}
+.topbar .logo{font-weight:800;letter-spacing:.02em;font-size:15px;display:flex;align-items:center;gap:7px}
+.topbar .logo i{font-style:normal}
+.topbar .spacer{flex:1}
+.topbar .who{
+  font-size:12px;color:var(--ink-2);background:#fff;border:1px solid var(--line);
+  border-radius:99px;padding:5px 12px;display:flex;align-items:center;gap:6px;
+}
+.topbar .who .av{width:19px;height:19px;border-radius:50%;background:linear-gradient(135deg,#FFB36B,#FF7A29)}
+
+/* ============ 共通パーツ ============ */
+.card{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:22px;box-shadow:var(--shadow-sm)}
+.card.tight{padding:18px}
+.eyebrow{font-size:12px;font-weight:800;letter-spacing:.12em;color:var(--orange-dk)}
+h1{font-size:30px;line-height:1.45;margin:10px 0 12px;letter-spacing:.01em}
+h2{font-size:21px;line-height:1.55;margin:0 0 4px}
+h3{font-size:16px;margin:0 0 6px}
+p{margin:0}
+.lead{color:var(--ink-2);line-height:1.95;font-size:15px}
+.small{font-size:13px;color:var(--muted);line-height:1.85}
+.tiny{font-size:11.5px;color:var(--muted);line-height:1.7}
+
+.btn{
+  display:flex;align-items:center;justify-content:center;gap:9px;width:100%;
+  background:var(--orange);color:#fff;border-radius:14px;padding:16px 20px;
+  font-size:16px;font-weight:700;box-shadow:0 2px 10px rgba(200,85,20,.24);
+  transition:.14s;letter-spacing:.02em;
+}
+.btn:hover{background:var(--orange-dk)}
+.btn:active{transform:translateY(1px)}
+.btn.ghost{background:#fff;color:var(--ink);border:1.5px solid var(--line-2);box-shadow:var(--shadow-sm)}
+.btn.ghost:hover{background:#FCFBFA;border-color:var(--muted)}
+.btn.small{padding:11px 18px;font-size:13.5px;border-radius:12px}
+.btn.google{background:#fff;color:var(--ink);border:1.5px solid var(--line-2);box-shadow:var(--shadow-sm)}
+.btn.google:hover{background:#FCFBFA;border-color:var(--muted)}
+.btn[disabled]{opacity:.4;pointer-events:none}
+.textlink{color:var(--ink-2);font-size:13.5px;text-decoration:underline;text-underline-offset:3px}
+
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:800;padding:6px 12px;border-radius:99px}
+.pill.o{background:var(--orange-lt);color:var(--orange-dk)}
+.pill.m{background:var(--mint-lt);color:#1B7E58}
+.pill.s{background:var(--sky-lt);color:#2E6C9E}
+.pill.b{background:var(--berry-lt);color:#B92B4E}
+.pill.y{background:var(--sun-lt);color:#9A6D06}
+
+/* ============ ランディング ============ */
+.hero{padding:34px 0 0}
+.hero-art{display:flex;justify-content:center;margin:6px 0 4px}
+.hero h1{font-size:32px}
+.hero-grid{display:grid;gap:26px}
+.usecases{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.usecases span{background:#fff;border:1px solid var(--line);border-radius:99px;padding:7px 14px;font-size:13px;color:var(--ink-2)}
+
+/* ============ テーマ入力 ============ */
+.bigfield{
+  background:#fff;border:1.5px solid var(--line-2);border-radius:14px;padding:18px 20px;
+  display:flex;align-items:center;gap:10px;box-shadow:var(--shadow-sm);
+}
+.bigfield input{border:0;outline:0;background:transparent;width:100%;font-size:18px;font-weight:700;line-height:1.6}
+.bigfield input::placeholder{color:#D3C3B2;font-weight:400}
+.suggest{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+.sug{
+  display:flex;align-items:center;gap:13px;background:#fff;border:1px solid var(--line);
+  border-radius:14px;padding:14px 16px;text-align:left;transition:.14s;width:100%;
+}
+.sug:hover{border-color:var(--orange);transform:translateY(-1px)}
+.sug .ic{width:42px;height:42px;border-radius:15px;display:grid;place-items:center;font-size:21px;flex:none}
+.sug b{display:block;font-size:15.5px}
+.sug .small{margin-top:1px}
+.sug .go{margin-left:auto;color:var(--muted);font-size:18px}
+
+/* ============ 質問 ============ */
+.qhead{display:flex;align-items:center;gap:12px;margin:20px 0 14px}
+.qhead .back{width:38px;height:38px;border-radius:14px;background:#fff;border:1.5px solid var(--line);display:grid;place-items:center;font-size:17px;flex:none}
+.progress{flex:1}
+.progress .bar{height:8px;background:#EDE8E1;border-radius:99px;overflow:hidden}
+.progress .bar i{display:block;height:100%;background:var(--orange);border-radius:99px;transition:width .35s cubic-bezier(.2,.8,.2,1)}
+.progress .lb{font-size:11.5px;color:var(--muted);margin-top:5px;display:flex;justify-content:space-between}
+
+.qcard{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:24px 22px;box-shadow:var(--shadow)}
+.qwhy{
+  display:flex;gap:9px;align-items:flex-start;background:var(--sun-lt);border-radius:16px;
+  padding:11px 13px;margin-bottom:16px;font-size:12.5px;line-height:1.75;color:#8A6206;
+}
+.qwhy .ic{flex:none;font-size:14px;line-height:1.5}
+.qtitle{font-size:22px;font-weight:800;line-height:1.55;margin-bottom:18px;letter-spacing:.01em}
+.opts{display:grid;gap:10px}
+.opt{
+  display:flex;align-items:center;gap:12px;background:#fff;border:1.5px solid var(--line);
+  border-radius:12px;padding:15px 16px;text-align:left;font-size:15.5px;font-weight:700;transition:.13s;
+}
+.opt:hover{border-color:var(--orange);background:#FDFAF7}
+.opt.on{border-color:var(--orange);background:var(--orange-lt)}
+.opt .em{font-size:19px;flex:none}
+.opt .ck{margin-left:auto;width:22px;height:22px;border-radius:50%;border:2px solid var(--line-2);flex:none}
+.opt.on .ck{background:var(--orange);border-color:var(--orange);color:#fff;display:grid;place-items:center;font-size:12px}
+.qskip{text-align:center;margin-top:16px}
+
+/* ============ ローディング ============ */
+.loading{min-height:70vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:20px}
+.loading h2{font-size:20px}
+.spin{width:64px;height:64px;position:relative}
+.spin i{position:absolute;inset:0;border-radius:50%;border:4px solid #EDE8E1;border-top-color:var(--orange);animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.log{width:100%;max-width:400px;text-align:left;display:grid;gap:9px}
+.log div{
+  display:flex;gap:10px;align-items:flex-start;font-size:13.5px;color:var(--muted);
+  background:#fff;border:1px solid var(--line);border-radius:12px;padding:11px 14px;
+  opacity:0;transform:translateY(6px);transition:.4s;
+}
+.log div.on{opacity:1;transform:none;color:var(--ink-2)}
+.log div.done .ic{color:var(--mint)}
+.log div .ic{flex:none;font-weight:800}
+
+/* ============ 結果ページ ============ */
+.section{margin-top:50px}
+.sec-h{display:flex;align-items:center;gap:11px;margin-bottom:16px}
+.sec-h .no{
+  width:26px;height:26px;border-radius:9px;background:var(--orange-lt);color:var(--orange-dk);
+  display:grid;place-items:center;font-size:12px;font-weight:800;flex:none;
+}
+.sec-h h2{font-size:19px;margin:0;line-height:1.5;letter-spacing:.01em}
+
+.verdict{
+  background:linear-gradient(160deg,#FDF3EB 0%,#FEFCFA 62%);
+  border:1px solid #EFE0D0;border-radius:20px;padding:26px 22px;box-shadow:var(--shadow);
+}
+.verdict .ans{font-size:26px;font-weight:900;line-height:1.5;letter-spacing:.01em;margin:8px 0 14px}
+.verdict .ans em{font-style:normal;color:var(--orange-dk)}
+.verdict .body{font-size:13px;line-height:2;color:var(--ink-2)}
+.facts{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:20px}
+.fact{background:rgba(255,255,255,.85);border:1px solid #EEE3D6;border-radius:12px;padding:13px 15px}
+.fact .l{font-size:11.5px;color:var(--muted)}
+.fact .v{font-size:21px;font-weight:900;letter-spacing:-.01em;margin-top:2px}
+.fact .v small{font-size:12px;font-weight:700}
+
+
+.tabs{display:flex;gap:4px;background:#F1EEE9;padding:4px;border-radius:12px;margin-bottom:14px}
+.tabs button{flex:1;padding:11px 0;border-radius:9px;font-size:14px;font-weight:800;color:var(--ink-2);transition:.14s}
+.tabs button.on{background:#fff;color:var(--orange-dk);box-shadow:var(--shadow-sm)}
+
+.scene{
+  background:#fff;border:1px solid var(--line);border-radius:16px;padding:22px;
+}
+.scene .when{font-size:12px;font-weight:800;color:var(--orange-dk);letter-spacing:.08em}
+.scene .ttl{font-size:19px;font-weight:900;line-height:1.55;margin:6px 0 12px}
+.scene .txt{font-size:14.5px;line-height:2.05;color:var(--ink-2)}
+.scene .txt .hl{background:linear-gradient(transparent 62%,#FFE0AF 62%);font-weight:800;color:var(--ink)}
+.scene .txt .hl-b{background:linear-gradient(transparent 62%,#FBD3DC 62%);font-weight:800;color:var(--ink)}
+.scene-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:10px;margin-top:18px}
+.sstat{background:var(--cream);border-radius:16px;padding:12px 14px}
+.sstat .l{font-size:11px;color:var(--muted)}
+.sstat .v{font-size:17px;font-weight:900;margin-top:1px}
+
+
+.tuner{background:#fff;border:1.5px solid var(--line);border-radius:22px;padding:20px}
+.slider{margin-bottom:20px}
+.slider:last-of-type{margin-bottom:14px}
+.slider .lb{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px}
+.slider .lb b{font-size:14px}
+.slider .lb .v{font-size:16px;font-weight:900;color:var(--orange-dk)}
+input[type=range]{
+  -webkit-appearance:none;width:100%;height:8px;border-radius:99px;background:#EDE8E1;outline:0;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:#fff;
+  border:3px solid var(--orange);box-shadow:0 1px 5px rgba(60,50,40,.22);cursor:pointer;
+}
+.toggle{display:flex;gap:8px}
+.toggle button{
+  flex:1;padding:11px;border-radius:14px;border:2px solid var(--line);background:#fff;
+  font-size:13.5px;font-weight:800;color:var(--ink-2);
+}
+.toggle button.on{border-color:var(--orange);background:var(--orange-lt);color:var(--orange-dk)}
+.tune-res{
+  background:#FCFAF8;border:1px solid var(--line);border-radius:14px;padding:18px;margin-top:20px;
+}
+.trh{font-size:11px;font-weight:800;color:var(--muted);letter-spacing:.06em;margin-bottom:12px}
+.mini-btn{
+  width:100%;margin-top:16px;padding:8px;border-radius:9px;border:1px solid var(--line-2);
+  background:#fff;font-size:11px;font-weight:700;color:var(--ink-2);transition:.14s;
+}
+.mini-btn:hover{background:#F5F2EE;border-color:var(--muted)}
+.trow{display:grid;grid-template-columns:1fr 44px;gap:8px;align-items:center;margin-bottom:11px}
+.trow:last-child{margin-bottom:0}
+.trow .tn{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:800;color:var(--ink-2)}
+.trow .tn i{width:9px;height:9px;border-radius:50%;flex:none}
+.trow .tb{height:10px;background:#EDE8E1;border-radius:99px;overflow:hidden;margin-top:5px}
+.trow .tb i{display:block;height:100%;border-radius:99px;transition:width .35s cubic-bezier(.2,.8,.2,1)}
+.trow .tv{text-align:right;font-size:14px;font-weight:900;color:var(--ink)}
+.trow.sel .tn{color:var(--ink)}
+.trow.sel .tn{color:var(--ink)}
+.trow.sel .tb{box-shadow:0 0 0 4px var(--glow);background:#fff}
+.trow.sel .tv{color:var(--ink)}
+.trow .star{font-size:9.5px;font-weight:800;color:#9A6D06;background:var(--sun-lt);
+  border-radius:99px;padding:2px 8px;white-space:nowrap}
+.trbest{margin-top:14px;padding-top:13px;border-top:1px dashed var(--line-2);font-size:12.5px;line-height:1.85}
+.trbest b{color:var(--orange-dk)}
+
+.actfor{
+  display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-bottom:12px;
+  font-size:12.5px;color:var(--muted);
+}
+.af-nm{display:inline-flex;align-items:center;gap:7px;font-weight:800;color:var(--ink);margin-right:2px}
+.af-nm i{width:9px;height:9px;border-radius:50%;display:block}
+.firststep{
+  background:var(--ink);color:#fff;border-radius:18px;padding:26px 22px;box-shadow:var(--shadow);
+}
+.firststep .lb{font-size:12px;font-weight:800;letter-spacing:.1em;color:#D6A578}
+.firststep .big{font-size:25px;font-weight:900;line-height:1.55;margin:10px 0 12px}
+.firststep .txt{font-size:14px;line-height:2;color:#CFC8C0}
+.firststep .btn{margin-top:18px;background:var(--orange);box-shadow:0 5px 0 #B94A08}
+
+.tl{display:grid;gap:0;margin-top:14px}
+.tlrow{display:grid;grid-template-columns:76px 1fr;gap:14px;padding:15px 0;border-bottom:1.5px dashed var(--line)}
+.tlrow:last-child{border-bottom:0}
+.tlrow .w{font-size:12.5px;font-weight:900;color:var(--orange-dk);padding-top:2px}
+.tlrow .t b{font-size:15px;display:block;margin-bottom:3px}
+.tlrow .t .small{font-size:13px}
+
+.checks2{display:grid;gap:16px}
+.chead{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:800;padding:8px 12px;border-radius:9px;margin-bottom:4px}
+.chead.ok{background:var(--mint-lt);color:#1B7E58}
+.chead.ng{background:var(--berry-lt);color:#B92B4E}
+.check{display:flex;gap:11px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--line)}
+.check:last-child{border-bottom:0}
+.check .st{font-weight:900;flex:none;font-size:15px}
+.check .st.ok{color:var(--mint)}
+.check .st.ng{color:var(--berry)}
+.check .tx{font-size:14px;line-height:1.7}
+.check .tx small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+
+.handoff{display:grid;gap:10px}
+.hoff{
+  display:flex;gap:13px;align-items:center;background:#fff;border:1px solid var(--line);
+  border-radius:14px;padding:15px 16px;text-align:left;width:100%;transition:.14s;
+}
+.hoff:hover{border-color:var(--orange);transform:translateY(-1px)}
+.hoff .ic{width:42px;height:42px;border-radius:15px;display:grid;place-items:center;font-size:20px;flex:none}
+.hoff b{font-size:15px;display:block}
+.hoff .go{margin-left:auto;color:var(--muted)}
+
+.paywall{
+  background:#FCFAF8;border:1.5px dashed var(--line-2);border-radius:16px;padding:22px;text-align:center;
+}
+.paywall .pill{margin-bottom:10px}
+
+/* ============ 結果：サイドナビ付きレイアウト ============ */
+.result-layout{display:block}
+.sidenav{
+  position:sticky;top:49px;z-index:30;display:flex;gap:7px;overflow-x:auto;
+  background:rgba(250,248,245,.96);backdrop-filter:blur(10px);
+  margin:0 -20px 16px;padding:11px 20px;border-bottom:1px solid var(--line);
+  scrollbar-width:none;
+}
+.sidenav::-webkit-scrollbar{display:none}
+.navitem{
+  flex:none;display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:800;
+  color:var(--ink-2);background:#fff;border:1px solid var(--line);border-radius:99px;
+  padding:8px 14px;white-space:nowrap;transition:.14s;
+}
+.navitem.on{background:var(--orange-lt);color:var(--orange-dk);border-color:var(--orange)}
+.ni-ic{font-size:13px;line-height:1}
+.ni-t small{display:none}
+.navhead,.myinput{display:none}
+.rsec{scroll-margin-top:118px}
+
+/* 4つの道（コンパクトカード） */
+.pcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:9px}
+.pcard{
+  background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:13px 12px;text-align:left;
+  transition:.14s;position:relative;
+}
+.pcard:hover{border-color:#FFC79A}
+.pcard.on{border-color:var(--orange);background:var(--orange-lt);box-shadow:var(--shadow)}
+.pcard .ph{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+.pcard .em{width:32px;height:32px;border-radius:11px;display:grid;place-items:center;font-size:16px;flex:none}
+.pcard .nm{font-weight:900;font-size:13.5px;line-height:1.35}
+.pcard .tg{font-size:10.5px;color:var(--muted);margin-top:1px;line-height:1.4}
+.pcard .pm{display:grid;gap:4px;border-top:1.5px dashed var(--line);padding-top:9px}
+.pcard .pm div{display:flex;justify-content:space-between;gap:6px;font-size:11px;line-height:1.5}
+.pcard .pm span{color:var(--muted);flex:none}
+.pcard .pm b{font-weight:800;text-align:right}
+.pcard .rec{position:absolute;top:-9px;right:9px;font-size:10px;padding:4px 9px}
+
+/* 選択中の道：ひとつのパネルにまとめ、選んだカードから繋がって見せる */
+.integ{
+  position:relative;margin-top:20px;background:#fff;border:1.5px solid var(--orange);
+  border-radius:16px;padding:22px 20px;box-shadow:var(--shadow);
+}
+.integ:before{
+  content:"";position:absolute;top:-11px;left:var(--px,50%);width:20px;height:20px;
+  background:#fff;border-left:1.5px solid var(--orange);border-top:1.5px solid var(--orange);
+  transform:translateX(-50%) rotate(45deg);border-radius:5px 0 0 0;
+  transition:left .3s cubic-bezier(.2,.8,.2,1);
+}
+.integ-in{display:grid;gap:20px}
+.integ .scene{background:none;border:0;border-radius:0;padding:0}
+.integ .lft h3{font-size:16px;margin-bottom:8px}
+
+/* グラフ */
+.chartcard{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px}
+.mtabs{display:flex;gap:3px;background:#F1EEE9;padding:4px;border-radius:12px;margin-bottom:6px;overflow-x:auto;scrollbar-width:none}
+.mtabs::-webkit-scrollbar{display:none}
+.mtabs button{flex:1;min-width:70px;padding:10px 4px;border-radius:9px;font-size:12px;font-weight:800;color:var(--ink-2);white-space:nowrap}
+.mtabs button.on{background:#fff;color:var(--orange-dk);box-shadow:var(--shadow-sm)}
+#chartBox{width:100%;overflow:hidden}
+.legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.lg{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:800;color:var(--ink-2);
+  background:#fff;border:1px solid var(--line);border-radius:99px;padding:5px 9px;transition:.14s;
+  flex:1 1 calc(50% - 3px);min-width:0;white-space:nowrap;overflow:hidden}
+.lg i{width:9px;height:9px;border-radius:50%;display:block;flex:none}
+.lg.on{border-color:var(--ink);color:var(--ink);background:#FFFDFA}
+/* くらべる基準（今のまま） */
+.basecmp{
+  margin-top:18px;padding:14px 16px;background:#F7F6F4;border:1px dashed var(--line-2);border-radius:12px;
+}
+.bch{font-size:10.5px;font-weight:800;color:var(--muted);letter-spacing:.06em;margin-bottom:6px}
+.bct{font-size:13px;font-weight:700;line-height:1.7;color:var(--ink-2)}
+.bcs{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px}
+.bcs span{font-size:11px;color:var(--muted);font-weight:700}
+.bcs i{font-style:normal;font-weight:400;margin-right:5px}
+.lg.base{background:#F7F6F4;border-style:dashed;color:var(--muted);cursor:default}
+
+/* 条件スライダー × グラフ */
+.cond-grid{display:grid;gap:22px}
+.conds{background:#FCFAF8;border:1px solid var(--line);border-radius:14px;padding:18px}
+
+/* 下部固定バー */
+.dock{
+  position:fixed;left:0;right:0;bottom:0;z-index:50;padding:12px 20px calc(12px + env(safe-area-inset-bottom));
+  background:linear-gradient(180deg,rgba(250,248,245,0),rgba(250,248,245,.97) 32%);
+  display:none;
+}
+.dock.on{display:block}
+.dock .inner{width:min(100%,560px);margin:0 auto}
+
+/* 吹き出し（AIナビ） */
+.ai{display:flex;gap:11px;align-items:flex-start;margin-bottom:16px}
+.ai .face{
+  width:40px;height:40px;border-radius:50%;flex:none;
+  background:linear-gradient(135deg,#F3C79A,#E8934A);display:grid;place-items:center;font-size:19px;
+  box-shadow:var(--shadow-sm);
+}
+.ai .bub{
+  background:#fff;border:1px solid var(--line);border-radius:4px 14px 14px 14px;padding:13px 16px;
+  font-size:14px;line-height:1.85;box-shadow:var(--shadow-sm);
+}
+.ai .bub b{color:var(--orange-dk)}
+
+/* ============ デスクトップ ============ */
+@media (min-width:900px){
+  .stage{padding:0 32px 140px}
+  .hero{padding:60px 0 0}
+  .hero-grid{grid-template-columns:1.05fr .95fr;align-items:center;gap:48px;width:min(100%,1000px);margin:0 auto}
+  .hero h1{font-size:44px}
+  .hero-art svg{width:340px;height:auto}
+  h1{font-size:38px}
+  .facts{grid-template-columns:repeat(4,1fr)}
+
+  /* 結果：左サイドナビ */
+  .result-layout{display:grid;grid-template-columns:214px 1fr;gap:34px;align-items:start}
+  .sidenav{
+    position:sticky;top:92px;flex-direction:column;gap:3px;overflow:visible;
+    background:none;backdrop-filter:none;border:0;margin:0;padding:0;
   }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; background: var(--zinc-50); color: var(--zinc-900);
-    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", sans-serif;
+  .navhead{
+    display:block;font-size:10.5px;font-weight:800;color:var(--muted);letter-spacing:.08em;
+    padding:0 14px 8px;
   }
-  main { max-width: 960px; margin: 0 auto; padding: 48px 16px 80px; }
-  .notice {
-    background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412;
-    border-radius: 10px; padding: 12px 16px; font-size: 13px; margin-bottom: 32px;
+  .navitem{
+    width:100%;text-align:left;background:transparent;border-color:transparent;
+    padding:11px 13px;border-radius:12px;display:flex;align-items:flex-start;gap:10px;white-space:normal;
   }
-  .eyebrow { color: var(--indigo-600); font-size: 14px; font-weight: 600; margin: 0; }
-  h1 { font-size: 28px; font-weight: 800; margin: 4px 0 0; letter-spacing: -0.01em; }
-  .conclusion { font-size: 15px; line-height: 1.8; color: var(--zinc-700); margin-top: 12px; }
-  .grid { display: grid; grid-template-columns: 1fr; gap: 24px; margin-top: 32px; }
-  @media (min-width: 800px) { .grid { grid-template-columns: 1fr 1fr; } }
-  .card {
-    background: #fff; border: 1px solid var(--zinc-200); border-radius: 14px;
-    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  .navitem:hover{background:#F5F2EE}
+  .ni-ic{font-size:15px;line-height:1.45;flex:none;filter:grayscale(.45);transition:.14s}
+  .ni-t{min-width:0}
+  .ni-t b{display:block;font-size:13px;font-weight:800;line-height:1.5;color:var(--ink-2)}
+  .ni-t small{
+    display:block;font-size:10.5px;font-weight:400;color:var(--muted);
+    line-height:1.5;margin-top:1px;letter-spacing:.01em;
   }
-  .card.current { border-top: 4px solid var(--zinc-300); }
-  .card.target { border-top: 4px solid var(--indigo-600); }
-  .badge {
-    display: inline-block; border-radius: 999px; padding: 3px 10px; font-size: 12px; font-weight: 600;
+  .navitem.on{background:#fff;border-color:var(--line);box-shadow:var(--shadow-sm)}
+  .navitem.on .ni-ic{filter:none}
+  .navitem.on .ni-t b{color:var(--orange-dk)}
+  /* 入力した内容 */
+  .myinput{display:block;margin-top:18px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 13px}
+  .mi-h{font-size:10px;font-weight:800;color:var(--muted);letter-spacing:.08em;margin-bottom:9px}
+  .mi-dream{
+    display:flex;gap:8px;align-items:flex-start;font-size:12.5px;font-weight:800;line-height:1.55;
+    background:var(--orange-lt);border-radius:10px;padding:9px 10px;margin-bottom:12px;color:var(--ink);
   }
-  .badge.current { background: var(--zinc-100); color: var(--zinc-600); }
-  .badge.target { background: var(--indigo-50); color: var(--indigo-700); }
-  .card h3 { font-size: 18px; font-weight: 700; margin: 10px 0 0; }
-  .section-label {
-    font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
-    color: var(--zinc-400); margin: 18px 0 4px;
+  .mi-dream i{font-style:normal;font-size:14px;line-height:1.4;flex:none}
+  .mi-row{display:flex;justify-content:space-between;gap:8px;font-size:11px;line-height:1.7;padding:5px 2px;border-bottom:1px dashed var(--line)}
+  .mi-row:last-of-type{border-bottom:0}
+  .mi-row dt{color:var(--muted);flex:none;margin:0}
+  .mi-row dd{margin:0;font-weight:700;text-align:right;color:var(--ink-2)}
+  .mi-row dd em{font-style:normal;color:var(--muted);font-weight:400;font-size:10px}
+  .mi-edit{
+    width:100%;margin-top:11px;padding:8px;border-radius:9px;border:1px solid var(--line-2);
+    background:#fff;font-size:11px;font-weight:700;color:var(--ink-2);transition:.14s;
   }
-  .section-body { font-size: 14px; color: var(--zinc-700); line-height: 1.7; }
-  .evidence, .assumptions { margin: 6px 0 0; padding-left: 18px; font-size: 12px; color: var(--zinc-500); }
-  .income-current { font-size: 12px; color: var(--zinc-500); }
-  .income-value { font-size: 20px; font-weight: 700; }
-  .income-range { font-size: 12px; color: var(--zinc-500); margin-left: 4px; }
-  ol.steps { margin: 4px 0 0; padding-left: 20px; font-size: 14px; color: var(--zinc-700); line-height: 1.8; }
-  .risk { border: 1px solid var(--zinc-200); border-radius: 10px; padding: 10px 12px; margin-top: 10px; }
-  .risk-title { font-size: 14px; font-weight: 600; }
-  .risk-desc { font-size: 13px; color: var(--zinc-600); margin-top: 4px; }
-  .tag { display: inline-block; border-radius: 999px; padding: 2px 8px; font-size: 11px; margin-left: 6px; }
-  .tag.low { background: var(--emerald-50); color: var(--emerald-700); }
-  .tag.medium { background: var(--amber-50); color: var(--amber-800); }
-  .tag.high { background: var(--red-50); color: var(--red-700); }
-  .tag.unknown { background: var(--zinc-100); color: var(--zinc-500); }
-  .tag.impact { background: var(--zinc-100); color: var(--zinc-600); }
-  .panel { background: #fff; border: 1px solid var(--zinc-200); border-radius: 14px; padding: 20px; margin-top: 24px; }
-  .panel.limits { background: var(--amber-50); border-color: var(--amber-200); }
-  .panel h2 { font-size: 14px; font-weight: 700; margin: 0 0 8px; }
-  .panel ul { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.8; color: var(--zinc-600); }
-  .panel.limits ul { color: var(--amber-800); }
-  .panel a { color: var(--indigo-600); text-decoration: underline; }
-  .footnote { font-size: 12px; color: var(--zinc-400); margin-top: 24px; line-height: 1.7; }
+  .mi-edit:hover{background:#F5F2EE;border-color:var(--muted)}
+  .rsec{scroll-margin-top:100px}
+  .pcards{grid-template-columns:repeat(3,1fr);gap:12px}
+  .integ{padding:26px}
+  .integ-in{grid-template-columns:300px 1fr;gap:28px}
+  .integ-in .scene{border-left:1px dashed var(--line);padding-left:28px}
+  .checks2{grid-template-columns:1fr 1fr;gap:26px}
+  .cond-grid{grid-template-columns:264px 1fr;gap:26px;align-items:start}
+  .lg{flex:0 0 auto;font-size:10.5px;padding:5px 11px}
+  .mtabs{gap:5px;padding:5px}
+  .mtabs button{font-size:12.5px;padding:10px 6px}
+  .dock.mobile-only{display:none !important}
+  .verdict{padding:36px 34px}
+  .verdict .ans{font-size:32px}
+  .qcard{padding:34px 32px}
+  .qtitle{font-size:26px}
+  .opts{grid-template-columns:repeat(2,1fr)}
+  .handoff{grid-template-columns:repeat(3,1fr)}
+  .dock .inner{width:min(100%,560px)}
+  .firststep{padding:38px 34px}
+  .firststep .big{font-size:31px}
+}
 </style>
 </head>
 <body>
-<main>
-  <div class="notice">
+
+<div style="max-width:820px;margin:14px auto 0;padding:0 20px">
+  <div style="background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:12px;padding:12px 16px;font-size:12.5px;line-height:1.8">
     このページは発表用に人手でリサーチ・検証した「チャンピオンデータ」のサンプルです。設計書12章の方針に基づき、
     Liveシステム（/api/research）の出力とは分離しています。登場人物・数値は架空の設定です。
+    デザイン・体験は <code>lifefork_demo.html</code>（UI案）をそのまま採用しています。
   </div>
+</div>
 
-  <p class="eyebrow">比較結果サンプル</p>
-  <h1>今の経理職を続けるより、IT業界の経理財務ポジションへの転職の方が、専門性を積みながら年収の伸びしろを確保しやすい可能性があります。</h1>
-  <p class="conclusion">
-    佐藤花子さん（架空・33歳、メーカー企業 経理歴7年）のプロフィールをもとにリサーチしました。
-    現職を続けた場合は安定した昇給が見込める一方、伸び幅は緩やかです。IT業界の経理財務職は求人需要が旺盛で、
-    経理経験と英語力を組み合わせられれば年収レンジが上振れしやすい傾向がありますが、業界特有の会計処理（収益認識など）への
-    キャッチアップが必要という前提付きです。
-  </p>
+<!-- ============ TOPBAR ============ -->
+<div class="topbar" id="topbar">
+  <div class="logo"><i>🍴</i>LifeFork</div>
+  <div class="spacer"></div>
+  <div class="who"><span class="av"></span>ログイン中（デモ）</div>
+</div>
 
-  <div class="grid">
-    <section class="card current">
-      <span class="badge current">今の道を続ける</span>
-      <h3>メーカー企業での経理職を継続</h3>
 
-      <div class="section-label">将来性</div>
-      <p class="section-body">
-        大手メーカーの経理として安定したポジションを維持できる見込みです。年功的な昇給に加え、決算経験を積むことで
-        主任・係長クラスへの昇格が視野に入ります。ただし業務のDX化により定型業務の比重は縮小していく可能性があります。
-      </p>
-      <ul class="evidence">
-        <li>7年の経理実務経験があり、社内評価は安定している（本人申告ベース）</li>
-        <li>製造業経理は決算・原価計算の専門性が評価されやすい傾向</li>
-      </ul>
-
-      <div class="section-label">年収</div>
+<!-- ============================================================
+     0. ランディング
+     ============================================================ -->
+<div class="stage on" id="s-landing">
+  <div class="hero">
+    <div class="hero-grid">
       <div>
-        <span class="income-current">現在</span>
-        <span class="income-value">4,500,000円</span>
-      </div>
-      <div style="margin-top:4px;">
-        <span class="income-current">3年後（想定レンジ）</span>
-        <span class="income-value">4,950,000円</span>
-        <span class="income-range">（4,700,000円 〜 5,300,000円）</span>
-      </div>
-      <ul class="assumptions">
-        <li>年1〜2%程度の定期昇給が継続すると仮定</li>
-        <li>主任昇格（3年以内）を仮定した場合の上振れを含む</li>
-      </ul>
-
-      <div class="section-label">実現手段</div>
-      <ol class="steps">
-        <li>決算業務の主担当化を目指し、上長へ担当領域拡大を相談する</li>
-        <li>日商簿記1級または税理士科目合格を目標に学習を継続する</li>
-        <li>連結決算・IFRS対応など上位スキルの習得機会を社内で探す</li>
-      </ol>
-
-      <div class="section-label">リスク</div>
-      <div class="risk">
-        <span class="risk-title">経理業務のDX・自動化による定型業務の縮小</span>
-        <span class="tag medium">可能性: 中</span>
-        <span class="tag impact">影響: 中</span>
-        <p class="risk-desc">
-          会計ソフトやRPA導入により、伝票入力など定型業務の需要が中期的に減少する可能性があります。
+        <div class="eyebrow">LifeFork ／ 人生分岐AI</div>
+        <h1>その「いいなあ」、<br>ちょっと調べてみない？</h1>
+        <p class="lead">
+          転職や独立、ふと思いついたけど<br>
+          そのままになっていませんか。<br>
+          <b>その道に進んだ未来</b>と<b>今のままの未来</b>を、<br>
+          AIが調べて並べてみます。
         </p>
-      </div>
-      <div class="risk">
-        <span class="risk-title">昇格ポストの限界による頭打ち</span>
-        <span class="tag medium">可能性: 中</span>
-        <span class="tag impact">影響: 中</span>
-        <p class="risk-desc">
-          同世代内でのポスト競合により、想定より昇格ペースが遅れる可能性があります。
-        </p>
-      </div>
-    </section>
+        <div class="usecases">
+          <span>🍓 いちご農園をやりたい</span>
+          <span>☕️ カフェを開きたい</span>
+          <span>💻 別の業界に転職したい</span>
+          <span>🐕 トリマーになりたい</span>
+        </div>
 
-    <section class="card target">
-      <span class="badge target">検討している道</span>
-      <h3>IT業界（SaaS企業想定）の経理財務職への転職</h3>
-
-      <div class="section-label">将来性</div>
-      <p class="section-body">
-        SaaS・IT業界は成長投資に伴う資金調達・IPO準備などで経理財務人材の需要が高く、経理経験者を歓迎する求人が
-        比較的多い分野です。将来的にはFP&A（経営企画寄りの財務）へのキャリア拡張も見込めますが、
-        収益認識基準やSaaS特有のKPI管理など、キャッチアップが必要な領域があります。
-      </p>
-      <ul class="evidence">
-        <li>IT・SaaS企業は経理財務ポジションの中途採用に積極的な求人が多い傾向</li>
-        <li>経理実務7年の経験は業界を問わず一定の評価を受けやすい</li>
-      </ul>
-
-      <div class="section-label">年収</div>
-      <div style="margin-top:4px;">
-        <span class="income-current">3年後（想定レンジ）</span>
-        <span class="income-value">5,800,000円</span>
-        <span class="income-range">（5,000,000円 〜 6,800,000円）</span>
+        <div style="margin-top:26px">
+          <button class="btn google" onclick="login()">
+            <svg width="19" height="19" viewBox="0 0 48 48"><path fill="#4285F4" d="M45 24.5c0-1.6-.1-2.7-.4-4H24v7.3h12c-.2 2-1.5 5-4.4 7l6.8 5.2C42.3 36.3 45 30.9 45 24.5z"/><path fill="#34A853" d="M24 46c5.9 0 10.8-1.9 14.4-5.3l-6.8-5.2c-1.8 1.3-4.3 2.2-7.6 2.2-5.8 0-10.7-3.8-12.5-9l-7 5.4C8.1 41.1 15.4 46 24 46z"/><path fill="#FBBC05" d="M11.5 28.7c-.5-1.4-.7-2.9-.7-4.7s.3-3.3.7-4.7l-7-5.4C3.3 16.9 2.5 20.3 2.5 24s.8 7.1 2 10.1l7-5.4z"/><path fill="#EA4335" d="M24 10.9c4.1 0 6.9 1.8 8.5 3.3l6.2-6C34.8 4.7 29.9 2.5 24 2.5 15.4 2.5 8.1 7.4 4.5 14l7 5.4c1.8-5.2 6.7-8.5 12.5-8.5z"/></svg>
+            Googleではじめる
+          </button>
+          <p class="tiny" style="text-align:center;margin-top:12px">
+            毎月1回まで無料。名前の登録もアンケートもありません。
+          </p>
+        </div>
       </div>
-      <ul class="assumptions">
-        <li>入社時は現職と同水準〜微増、その後の評価次第で上振れすると仮定</li>
-        <li>IPO準備・上場企業での経験加算を含めた場合の上限値</li>
-        <li>ストックオプション等の非金銭報酬は含まない</li>
-      </ul>
 
-      <div class="section-label">実現手段</div>
-      <ol class="steps">
-        <li>SaaS企業の決算開示・収益認識基準（IFRS15等）を独学でキャッチアップする</li>
-        <li>IT業界の経理財務職に絞って転職エージェント2〜3社に登録する</li>
-        <li>面接では製造業とSaaS業態の会計処理の違いを説明できるよう準備する</li>
-      </ol>
+      <div class="hero-art">
+        <svg width="300" height="270" viewBox="0 0 300 270">
+          <ellipse cx="150" cy="252" rx="120" ry="12" fill="#F3E4D2"/>
+          <!-- 今の道 -->
+          <path d="M150 250 C150 210 148 190 140 168 C132 146 118 130 96 116 C74 102 56 92 44 78"
+                stroke="#DFCDB8" stroke-width="15" fill="none" stroke-linecap="round" stroke-dasharray="1 26"/>
+          <!-- 新しい道 -->
+          <path d="M150 250 C150 210 152 190 162 168 C174 142 194 126 218 112 C240 99 254 88 264 74"
+                stroke="#FFB877" stroke-width="15" fill="none" stroke-linecap="round" stroke-dasharray="1 26"/>
+          <!-- 分岐点の人 -->
+          <circle cx="150" cy="228" r="13" fill="#FF7A29"/>
+          <path d="M150 240 L150 250" stroke="#FF7A29" stroke-width="8" stroke-linecap="round"/>
+          <!-- 左の未来 -->
+          <g>
+            <rect x="14" y="34" width="60" height="46" rx="14" fill="#fff" stroke="#E6D5C2" stroke-width="2"/>
+            <text x="44" y="64" font-size="22" text-anchor="middle">🏢</text>
+          </g>
+          <!-- 右の未来 -->
+          <g>
+            <rect x="228" y="26" width="62" height="48" rx="14" fill="#FFF0E3" stroke="#FFB877" stroke-width="2.5"/>
+            <text x="259" y="57" font-size="22" text-anchor="middle">🍓</text>
+          </g>
+          <text x="44" y="102" font-size="11" text-anchor="middle" fill="#9C8B7A" font-family="sans-serif">今のまま</text>
+          <text x="259" y="96" font-size="11" text-anchor="middle" fill="#E8600F" font-family="sans-serif" font-weight="bold">進んだ未来</text>
+        </svg>
+      </div>
+    </div>
 
-      <div class="section-label">リスク</div>
-      <div class="risk">
-        <span class="risk-title">業界特有の会計処理・KPI管理へのキャッチアップ負荷</span>
-        <span class="tag medium">可能性: 中</span>
-        <span class="tag impact">影響: 大</span>
-        <p class="risk-desc">
-          収益認識基準やSaaS特有の指標（ARR、チャーン等）の理解に一定の学習期間が必要です。
-        </p>
+  </div>
+</div>
+
+
+<!-- ============================================================
+     1. テーマ入力
+     ============================================================ -->
+<div class="stage" id="s-theme">
+  <div class="narrow" style="padding-top:26px">
+    <div class="ai">
+      <div class="face">🍴</div>
+      <div class="bub">やってみたいこと、なんですか？<br>まだ ぼんやりでも大丈夫です。</div>
+    </div>
+
+    <div class="bigfield">
+      <span style="font-size:19px">✎</span>
+      <input id="themeInput" placeholder="いちご農園をやりたい" autocomplete="off">
+    </div>
+    <p class="tiny" style="margin:10px 4px 0">「〜になりたい」「〜を始めたい」のような書き方でOK</p>
+
+    <div style="margin-top:24px">
+      <p class="small" style="margin-bottom:10px;font-weight:800;color:var(--ink-2)">よく相談されるテーマ</p>
+      <div class="suggest">
+        <button class="sug" onclick="pickTheme('strawberry')">
+          <div class="ic" style="background:var(--berry-lt)">🍓</div>
+          <div><b>いちご農園をやりたい</b><div class="small">農業・地方移住・新規就農</div></div>
+          <div class="go">›</div>
+        </button>
+        <button class="sug" onclick="pickTheme('cafe')">
+          <div class="ic" style="background:var(--sun-lt)">☕️</div>
+          <div><b>カフェを開きたい</b><div class="small">飲食・独立開業・自分の店</div></div>
+          <div class="go">›</div>
+        </button>
+        <button class="sug" onclick="pickTheme('generic')">
+          <div class="ic" style="background:var(--sky-lt)">💼</div>
+          <div><b>別の業界に転職したい</b><div class="small">未経験からの職種チェンジ</div></div>
+          <div class="go">›</div>
+        </button>
       </div>
-      <div class="risk">
-        <span class="risk-title">スタートアップ・成長企業特有の事業変動リスク</span>
-        <span class="tag unknown">可能性: 不明</span>
-        <span class="tag impact">影響: 中</span>
-        <p class="risk-desc">
-          企業フェーズによっては組織変更や事業方針転換の影響を受けやすく、根拠となる情報が限定的です。
-        </p>
-      </div>
-    </section>
+    </div>
   </div>
 
-  <section class="panel">
-    <h2>根拠・参考情報</h2>
-    <ul>
-      <li><a href="https://www.mhlw.go.jp/toukei/itiran/roudou/chingin/kouzou/" target="_blank" rel="noopener noreferrer">厚生労働省 賃金構造基本統計調査</a> — 経理職種の年収水準の参考</li>
-      <li><a href="https://www.jicpa.or.jp/" target="_blank" rel="noopener noreferrer">日本公認会計士協会</a> — 会計・決算関連の専門情報の参考</li>
-    </ul>
-  </section>
+  <div class="dock on" id="dock-theme">
+    <div class="inner">
+      <button class="btn" id="themeGo" onclick="submitTheme()">これで調べてもらう</button>
+    </div>
+  </div>
+</div>
 
-  <section class="panel limits">
-    <h2>この結果の限界・前提の不確実性</h2>
-    <ul>
-      <li>年収レンジは公開求人情報・一般的な統計傾向をもとにした推定であり、個別企業のオファー額を保証するものではありません。</li>
-      <li>本ページは発表用に人手で作成したサンプルであり、Live版（OrcaRouter経由）の出力とは生成方法が異なります。</li>
-      <li>プロフィール・数値は架空の設定です。</li>
-    </ul>
-  </section>
 
-  <p class="footnote">
-    LifeFork Demo — 本ページは静的HTMLであり、システムのLive出力とは分離した発表用成果物です（設計書12章）。
-  </p>
-</main>
+<!-- ============================================================
+     2. 質問づくり（ローディング）
+     ============================================================ -->
+<div class="stage" id="s-building">
+  <div class="narrow loading">
+    <div class="spin"><i></i></div>
+    <div>
+      <h2 id="buildTitle">「いちご農園をやりたい」<br>を読みとっています</h2>
+      <p class="small" style="margin-top:8px">この夢の判断に必要な質問だけを選びます</p>
+    </div>
+    <div class="log" id="buildLog"></div>
+  </div>
+</div>
+
+
+<!-- ============================================================
+     3. 質問
+     ============================================================ -->
+<div class="stage" id="s-q">
+  <div class="narrow">
+    <div class="qhead">
+      <button class="back" onclick="prevQ()">←</button>
+      <div class="progress">
+        <div class="bar"><i id="qbar" style="width:0%"></i></div>
+        <div class="lb"><span id="qcount">1問目</span><span id="qleft">あと8問</span></div>
+      </div>
+    </div>
+
+    <div class="qcard">
+      <div class="qwhy" id="qwhy"><span class="ic">💡</span><span id="qwhyText"></span></div>
+      <div class="qtitle" id="qtitle"></div>
+      <div class="opts" id="qopts"></div>
+      <div class="qskip">
+        <button class="textlink" onclick="skipQ()">わからない・答えたくない</button>
+      </div>
+    </div>
+
+    <p class="tiny" style="text-align:center;margin-top:16px">
+      答えなかった項目は、同じ条件の人の平均でAIが補います
+    </p>
+  </div>
+</div>
+
+
+<!-- ============================================================
+     4. リサーチ中
+     ============================================================ -->
+<div class="stage" id="s-research">
+  <div class="narrow loading">
+    <div class="spin"><i></i></div>
+    <div>
+      <h2>あなたの未来を<br>調べています</h2>
+      <p class="small" style="margin-top:8px">実際の制度・相場・失敗例をあたっています</p>
+    </div>
+    <div class="log" id="researchLog"></div>
+    <p class="tiny">だいたい30秒くらいで終わります</p>
+  </div>
+</div>
+
+
+<!-- ============================================================
+     5. 結果
+     ============================================================ -->
+<div class="stage" id="s-result">
+  <div class="wide" style="padding-top:14px">
+    <div class="result-layout">
+
+      <!-- 左サイドナビ -->
+      <aside class="sidenav" id="sidenav">
+        <div class="navhead">この結果でわかること</div>
+        <button class="navitem on" data-go="r1">
+          <span class="ni-ic">💬</span>
+          <span class="ni-t"><b>AIのこたえ</b><small>やれる？ やれない？</small></span>
+        </button>
+        <button class="navitem" data-go="r2">
+          <span class="ni-ic">🛤</span>
+          <span class="ni-t"><b>進める3つの道</b><small>選んだ先の未来を読む</small></span>
+        </button>
+        <button class="navitem" data-go="r3">
+          <span class="ni-ic">🎚</span>
+          <span class="ni-t"><b>条件を変える</b><small>「もしも」を試してみる</small></span>
+        </button>
+        <button class="navitem" data-go="r4">
+          <span class="ni-ic">👟</span>
+          <span class="ni-t"><b>はじめの一歩</b><small>あしたから何をするか</small></span>
+        </button>
+
+        <!-- 入力した内容 -->
+        <div class="myinput" id="myInput"></div>
+      </aside>
+
+      <div class="result-main">
+
+        <!-- 1. こたえ -->
+        <section class="rsec" id="r1">
+          <div class="sec-h"><div class="no">1</div><h2>まずは、こたえから</h2></div>
+          <div class="verdict">
+            <span class="pill o" id="vBadge">AIのこたえ</span>
+            <div class="ans" id="vAns"></div>
+            <div class="body" id="vBody"></div>
+            <div class="facts" id="vFacts"></div>
+          </div>
+
+          <div class="card" style="margin-top:12px">
+            <div class="sec-h" style="margin-bottom:14px"><h2 style="font-size:16px">足りているもの・足りないもの</h2></div>
+            <div class="checks2">
+              <div><div class="chead ok">✓ 足りているもの</div><div id="checksOk"></div></div>
+              <div><div class="chead ng">✕ 足りないもの</div><div id="checksNg"></div></div>
+            </div>
+          </div>
+          <p class="tiny" style="margin:12px 4px 0" id="vAssume"></p>
+        </section>
+
+        <!-- 2. 4つの道（選択 → 詳細 → 条件つき比較グラフ） -->
+        <section class="rsec section" id="r2">
+          <div class="sec-h"><div class="no">2</div><h2>進める道は、3つあります</h2><div class="small">カードを選ぶと下が変わります</div></div>
+
+          <div class="pcards" id="pathList"></div>
+
+          <div class="integ" id="integ">
+            <div class="integ-in">
+              <div class="lft" id="pathDetail"></div>
+              <div class="scene">
+                <div class="tabs" id="yearTabs" style="margin-bottom:16px">
+                  <button class="on" data-y="y1">1年後</button>
+                  <button data-y="y3">3年後</button>
+                  <button data-y="y5">5年後</button>
+                </div>
+                <div class="when" id="scWhen"></div>
+                <div class="ttl" id="scTtl"></div>
+                <div class="txt" id="scTxt"></div>
+                <div class="scene-stats" id="scStats"></div>
+                <div class="basecmp" id="baseCmp"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 条件 × グラフ -->
+          <div class="rsec" id="r3" style="margin-top:46px">
+            <div class="sec-h"><div class="no">3</div><h2>条件が変われば、こたえも変わります</h2><div class="small">動かすとグラフが変わります</div></div>
+
+            <div class="chartcard">
+              <div class="cond-grid">
+                <div class="conds">
+                  <div class="slider">
+                    <div class="lb"><b>💰 準備できる貯金</b><span class="v" id="tSaveV">800万円</span></div>
+                    <input type="range" id="tSave" min="0" max="2000" step="50" value="800">
+                  </div>
+                  <div class="slider">
+                    <div class="lb"><b>⏳ 準備にかける期間</b><span class="v" id="tPrepV">15か月</span></div>
+                    <input type="range" id="tPrep" min="0" max="36" step="3" value="15">
+                  </div>
+                  <div class="slider">
+                    <div class="lb"><b>🕒 週に使える時間</b><span class="v" id="tHourV">8時間</span></div>
+                    <input type="range" id="tHour" min="0" max="30" step="1" value="8">
+                  </div>
+                  <div class="slider" style="margin-bottom:0">
+                    <div class="lb"><b>🏡 引っ越し</b></div>
+                    <div class="toggle" id="tMove">
+                      <button class="on" data-v="1">できる</button>
+                      <button data-v="0">むずかしい</button>
+                    </div>
+                  </div>
+                  <button class="mini-btn" id="tReset">条件をもとに戻す</button>
+                </div>
+
+                <div class="charts">
+                  <div class="mtabs" id="metricTabs">
+                    <button class="on" data-m="income">💰 年収</button>
+                    <button data-m="savings">🏦 貯金</button>
+                    <button data-m="dream">🎯 夢への近さ</button>
+                    <button data-m="happy">😊 満足度</button>
+                  </div>
+                  <div id="chartBox"></div>
+                  <div class="legend" id="legend"></div>
+                  <p class="tiny" id="chartNote" style="margin-top:10px"></p>
+                </div>
+              </div>
+
+              <div class="tune-res">
+                <div class="trh">この条件での「うまくいく確率」</div>
+                <div id="tuneBars"></div>
+                <div class="trbest" id="tuneBest"></div>
+              </div>
+              <p class="tiny" id="oNote" style="margin-top:12px"></p>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. やること -->
+        <section class="rsec section" id="r4">
+          <div class="sec-h"><div class="no">4</div><h2>じゃあ、何から始めましょうか</h2></div>
+          <div class="actfor" id="actFor"></div>
+          <div class="firststep">
+            <div class="lb">まずはこれだけ</div>
+            <div class="big" id="fsBig"></div>
+            <div class="txt" id="fsTxt"></div>
+          </div>
+
+          <div class="card" style="margin-top:14px">
+            <h3 id="planTtl" style="margin-bottom:2px">そのあとの流れ</h3>
+            <div class="tl" id="planTl"></div>
+          </div>
+
+          <div style="margin-top:22px">
+            <h3 style="font-size:16px;margin-bottom:2px">もう少し先まで進みたくなったら</h3>
+            <div class="handoff" id="handoff"></div>
+          </div>
+
+          <div class="paywall" style="margin-top:22px">
+            <span class="pill o">今月の無料ぶんを使いました</span>
+            <h3 style="font-size:18px;margin:6px 0 8px">別のテーマも調べてみますか？</h3>
+            <p class="small" style="margin-bottom:16px">
+              「カフェ」「地元にUターン」など、<br>もう1本ぶんのリサーチは <b style="color:var(--ink)">300円</b> です。
+            </p>
+            <button class="btn" style="width:auto;display:inline-flex;padding:14px 28px">もう1つ調べる</button>
+            <p class="tiny" style="margin-top:12px">来月1日になると、また無料で1回使えます</p>
+          </div>
+
+          <div style="text-align:center;margin-top:26px">
+            <button class="btn ghost" style="width:auto;display:inline-flex;margin:0 auto" onclick="restart()">最初からやりなおす</button>
+            <p class="tiny" style="margin-top:20px;max-width:520px;margin-left:auto;margin-right:auto">
+              ※ このデモの数字はハッカソン用の仮データです。<br>
+              実際のプロダクトでは、地域ごとの相場・補助金・求人・開業事例などをリサーチして生成します。
+            </p>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="dock mobile-only" id="dock-result">
+    <div class="inner">
+      <button class="btn" onclick="goSec('r4')">⚡️ 最初の一歩を見る</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+/* ============================================================
+   データ
+   ============================================================ */
+const COMMON_Q = [
+  {id:'age', lb:'年齢', q:'おいくつですか？', why:'年齢によって、使える制度や借りられるお金が変わります',
+   opts:[['20代','🌱'],['30代','🌿'],['40代','🌳'],['50代以上','🌲']], def:'30代'},
+  {id:'job', lb:'いまの仕事', q:'いまのお仕事は？', why:'いまの経験が、そのまま強みになることがあります',
+   opts:[['会社員','🏢'],['公務員','🏛'],['自営業・フリー','💻'],['パート・アルバイト','🕒'],['いまは働いていない','🍃']], def:'会社員'},
+  {id:'income', lb:'年収', q:'年収はどのくらい？', why:'辞めたときに減る額を計算します。だいたいでOKです',
+   opts:[['300万円くらいまで','　'],['300〜500万円','　'],['500〜700万円','　'],['700〜1000万円','　'],['1000万円以上','　']], def:'500〜700万円'},
+  {id:'save', lb:'貯金', q:'貯金はどのくらい？', why:'ここが一番大事です。ムリのない進み方が決まります',
+   opts:[['100万円くらいまで','　'],['100〜300万円','　'],['300〜500万円','　'],['500〜1000万円','　'],['1000万円以上','　']], def:'500〜1000万円'},
+  {id:'family', lb:'家族', q:'一緒に暮らしている人は？', why:'ひとりで決められるか、相談が要るかで進め方が変わります',
+   opts:[['ひとり暮らし','🙂'],['パートナーと','👫'],['子どもがいる','👨‍👩‍👦'],['親と同居','🏠']], def:'子どもがいる'},
+  {id:'when', lb:'動きたい時期', q:'いつごろ動きたいですか？', why:'期限があると、やることの順番が決まります',
+   opts:[['半年以内','🔥'],['1年以内','📅'],['3年以内','🗓'],['まだ決めていない','💭']], def:'1年以内'}
+];
+
+const DATA = {
+/* ---------------- いちご農園 ---------------- */
+strawberry:{
+  theme:'いちご農園をやりたい', emoji:'🍓', short:'いちご農園',
+  buildLog:[
+    'テーマを読みとりました：<b>新規就農（いちご）</b>',
+    '判断に効く項目を選定：資金・移住・体力・経験',
+    '関係のない質問を9個 除外しました',
+    '質問は<b>9問</b>です。だいたい30秒です'
+  ],
+  extraQ:[
+    {id:'move', lb:'引っ越し', q:'引っ越しはできそうですか？', why:'いちごは産地で条件がまるで違うので、いちばん大事な質問です',
+     opts:[['できる','🚚'],['条件つきならできる','🤔'],['むずかしい','🏠']], def:'条件つきならできる'},
+    {id:'exp', lb:'農業の経験', q:'農業をやったことは？', why:'ゼロからでも大丈夫ですが、進み方が変わります',
+     opts:[['まったくない','　'],['家庭菜園くらい','🪴'],['手伝ったことがある','🧑‍🌾'],['仕事でやっていた','🚜']], def:'まったくない'},
+    {id:'body', lb:'早起き・力仕事', q:'早起きと力仕事は？', why:'いちごは朝5時からの収穫が続きます。ここで諦める人が多いです',
+     opts:[['得意','💪'],['まあ大丈夫','🙂'],['正直つらい','😅']], def:'まあ大丈夫'}
+  ],
+  researchLog:[
+    '主ないちご産地の新規就農の条件を確認',
+    '就農支援の給付金・研修制度をチェック',
+    'ハウス・苗・設備の初期費用の相場を収集',
+    '1棟あたりの収量と出荷単価の実績を確認',
+    '5年以内にやめた人の理由を分析',
+    'あなたの貯金・家族条件と突き合わせ中'
+  ],
+  verdict:{
+    badge:'AIのこたえ',
+    ans:'やれます。<br>ただし<em>「明日辞めて就農」はだめ</em>です。',
+    body:'あなたには お金の余裕と学ぶ力があります。足りていないのは<b>いちごを育てた経験</b>と<b>売り先</b>です。<br>いま会社を辞めると、この2つを<b>お金が減っていく状態で</b>覚えることになります。<br>先に働きながら1年ためして、それから決めるのがいちばん確実です。',
+    facts:[['いま向いてる度','58','/100'],['準備できるお金','800','万円'],['生活できる期間','22','か月'],['いちご経験','0','年']],
+    assume:'※ 30代・会社員・年収500〜700万・貯金500〜1000万・子どもあり・引っ越しは条件つきで可、として計算しています'
+  },
+  paths:[
+    {id:'stay', base:true, nm:'今のまま（くらべる基準）', tg:'この道と比べます', em:'🏢', col:'sky',
+     mets:[['3年の収入','1,800万'],['むずかしさ','かんたん'],['夢への近さ','なし']],
+     detail:'お金の面ではいちばん安全です。ただ「やってみたかったな」が残ります。<br><b>調べもせずに諦めるのは、この道ですらありません。</b>まず試してから選んでも遅くはないです。'},
+    {id:'employ', nm:'A｜いちご農家で働く', tg:'給料をもらいながら覚える', em:'🧑‍🌾', col:'mint',
+     mets:[['3年の収入','900万'],['むずかしさ','ふつう'],['夢への近さ','かなり近い']],
+     detail:'収入は下がりますが、<b>お金をもらいながら</b>いちごの育て方を覚えられます。<br>「好き」と「毎日続けられる」は別物なので、これを確かめるのに向いています。独立しないまま定着する人も多いです。'},
+    {id:'now', nm:'B｜すぐに自分でやる', tg:'いきなり独立。当たれば大きい', em:'🚀', col:'berry',
+     mets:[['3年の収入','-200〜900万'],['むずかしさ','とてもむずかしい'],['夢への近さ','とても近い']],
+     detail:'うまくいけばいちばん自由です。でも今のあなたは<b>育て方・土地・売り先</b>が全部 未確定です。<br>いちごは「作れること」と「儲かること」がぜんぜん違います。この状態だと、失敗しても原因がわかりません。'},
+    {id:'step', nm:'C｜1年ためしてから', tg:'AIのおすすめ', em:'🌤', col:'orange', rec:true,
+     mets:[['3年の収入','1,100〜1,600万'],['むずかしさ','ふつう'],['夢への近さ','いちばん近い']],
+     detail:'会社の給料をもらったまま、週末に研修と農家めぐりをします。<br><b>辞める前に「向いているか」がわかる</b>のが最大の利点です。向いていなければ、失うものはほぼありません。<br>15か月後に「やる／やらない」をもう一度決めます。'}
+  ],
+  futures:{
+    stay:{
+      y1:{ttl:'変わらない毎日。ただ、頭の片隅にいちごがいる',
+        txt:'仕事は順調。給料も少し上がった。ただ、スーパーでいちごを見るたびに<span class="hl-b">「調べなかったな」</span>と思い出す。<br>行動していないので、状況は去年と同じ。',
+        st:[['年収','620万円'],['貯金','980万円'],['いちご経験','0年'],['満足度','ふつう']]},
+      y3:{ttl:'「昔さ、いちご農家やりたかったんだよね」',
+        txt:'飲み会の話のネタになった。笑って話せるくらいには遠くなった。<br>変わったのは <span class="hl-b">やり直すのに必要な年数</span>だけ。貯金は増えたけれど、使い道は決まっていない。',
+        st:[['年収','700万円'],['貯金','1,400万円'],['いちご経験','0年'],['満足度','すこし低い']]},
+      y5:{ttl:'安定はしている。後悔は小さく残っている',
+        txt:'40代。会社での立場もできた。生活に不満はない。<br>ただ、<span class="hl-b">40代からの新規就農は体力的にきつく</span>なる。選べる道が静かに1つ減った。',
+        st:[['年収','780万円'],['貯金','2,100万円'],['いちご経験','0年'],['満足度','ふつう']]}
+    },
+    employ:{
+      y1:{ttl:'手が土で汚れている。腰は痛い。でも毎日いちごに触っている',
+        txt:'農業法人に転職して1年。給料は下がったけれど、<span class="hl">毎日いちごを触っている</span>。<br>朝5時起きにも慣れてきた。病気の見分けがつくようになったのが嬉しい。',
+        st:[['年収','290万円'],['貯金','700万円'],['いちご経験','1年'],['満足度','高い']]},
+      y3:{ttl:'ひととおり できるようになった。任される側になった',
+        txt:'ハウス2棟を任されるように。<span class="hl">育てる・採る・出す</span>の流れを全部ひとりで回せる。<br>独立するかどうかは、まだ迷っている。でも<span class="hl">迷える立場になった</span>のが去年との違い。',
+        st:[['年収','360万円'],['貯金','620万円'],['いちご経験','3年'],['満足度','高い']]},
+      y5:{ttl:'農家として働いている。独立しなくても、もう当事者',
+        txt:'現場のリーダー。新人に教える側になった。<br>独立の話も来るが、<span class="hl">設備投資のリスクを負わずに続ける</span>選択も悪くないと思えている。<br>いちごの仕事をしている、という事実は変わらない。',
+        st:[['年収','430万円'],['貯金','780万円'],['いちご経験','5年'],['満足度','とても高い']]}
+    },
+    now:{
+      y1:{ttl:'ハウスは建った。でも、思ったように実がならない',
+        txt:'退職金と貯金でハウスを2棟。だが1年目は<span class="hl-b">収量が想定の6割</span>。<br>病気が出ても原因がわからず、聞ける相手もいない。<span class="hl-b">貯金がまっすぐ減っていく</span>のが精神的にきつい。',
+        st:[['年収','-120万円'],['貯金','180万円'],['いちご経験','1年'],['満足度','低い']]},
+      y3:{ttl:'ここで大きく分かれる。踏ん張れたか、資金が尽きたか',
+        txt:'収量は上がってきた。ただ<span class="hl-b">売り先が JAの相場まかせ</span>のままで、単価が読めない。<br>踏ん張れた人は黒字化が見えてくるが、<span class="hl-b">この時期に資金が尽きて辞める人がいちばん多い</span>。',
+        st:[['年収','-50〜320万円'],['貯金','0〜250万円'],['いちご経験','3年'],['満足度','ふりはば大']]},
+      y5:{ttl:'残れば自分の農園。ただし通った道は険しかった',
+        txt:'残れたなら、ハウス3棟の自分の農園。直販も少しずつ育っている。<br>ただ振り返ると、<span class="hl-b">最初の2年は「知らなかっただけ」で失った額が大きい</span>。<br>先に1年学んでいれば、同じ場所にもっと楽に着けた。',
+        st:[['年収','80〜520万円'],['貯金','100〜600万円'],['いちご経験','5年'],['満足度','ふりはば大']]}
+    },
+    step:{
+      y1:{ttl:'会社員のまま、週末はいちご農家',
+        txt:'週末に3つの産地をまわり、10日間の農家研修に参加した。<br><span class="hl">朝5時の収穫を10日やっても、まだ楽しかった</span>。これが分かっただけで大きい。<br>給料は変わらないので、貯金は減っていない。',
+        st:[['年収','620万円'],['貯金','940万円'],['いちご経験','0.3年'],['満足度','高い']]},
+      y3:{ttl:'2年目に就農。いちばん怖い時期を、準備ずみで通過した',
+        txt:'15か月の準備のあと、産地を決めて就農。<span class="hl">研修先の農家が相談相手になってくれている</span>。<br>収量は1年目から想定の9割。<span class="hl">「知らなかった」で失うお金がほとんどない</span>のが効いている。',
+        st:[['年収','180万円'],['貯金','520万円'],['いちご経験','2.5年'],['満足度','とても高い']]},
+      y5:{ttl:'自分のいちご。売り先も自分でつくった',
+        txt:'ハウス2棟＋直販とふるさと納税。<span class="hl">相場に振り回されない売り方</span>ができている。<br>朝5時、自分のハウスで、自分が選んだ品種を採っている。<br>5年前に「調べてみようかな」と思った日から、ここまで来た。',
+        st:[['年収','480万円'],['貯金','680万円'],['いちご経験','4.5年'],['満足度','とても高い']]}
+    }
+  },
+  series:{
+    income :{stay:[620,620,700,780], employ:[620,290,360,430], now:[620,-120,135,300], step:[620,620,180,480]},
+    savings:{stay:[800,980,1400,2100], employ:[800,700,620,780], now:[800,180,125,350], step:[800,940,520,680]},
+    dream  :{stay:[5,5,3,0],  employ:[5,45,70,78],  now:[5,55,72,88],  step:[5,40,82,95]},
+    happy  :{stay:[50,50,42,45], employ:[50,72,80,85], now:[50,28,52,62], step:[50,76,88,93]}
+  },
+  chartNote:{
+    income:'Bの3年後は「−50〜320万」の真ん中を取っています。ふりはばが大きいのがこの道の特徴です。',
+    savings:'「今のまま」は増え続けますが、使い道は決まりません。Cは一度減って、また戻ります。',
+    dream:'「今のまま」だけがずっと0のままです。Cは3年目でBを追い抜きます。',
+    happy:'Bの1年目の落ち込みが、いちばん人がやめるポイントです。'
+  },
+  checks:[
+    ['ok','12か月ぶんの生活費','貯金800万 ÷ 生活費35万 = 22か月 もちます'],
+    ['ok','新しいことを覚える力','いまの仕事の内容から、学習面は問題なしと判断'],
+    ['ok','家族に相談できる状態','移住は条件つきで可、とのこと。話し合いの余地あり'],
+    ['ng','いちごを育てた経験','0年。ここが最大の穴です'],
+    ['ng','どこでやるか（土地・ハウス）','未定。産地で条件が3倍くらい変わります'],
+    ['ng','売り先','未定。JAだけだと単価が読めません']
+  ],
+  first:{
+    employ:{
+      big:'辞める前に、<br>いちご農家の求人を3件 見る。',
+      txt:'いきなり応募しなくていいです。<b>給料・休み・住むところ</b>が書いてある求人を3件そろえて、いまの生活と並べてみてください。<br>比べられる状態になって、はじめて家族にも相談できます。'
+    },
+    now:{
+      big:'ハウスを建てる前に、<br>資金計画を1枚にする。',
+      txt:'この道はお金が先に出ていきます。<b>初期費用・毎月の支出・売上が立つまでの月数</b>を紙1枚にしてください。<br>貯金が尽きる月がいつなのか、数字で見えていないまま始めるのが いちばん危険です。'
+    },
+    step:{
+      big:'退職届より先に、<br>いちご農家で「3日間」働く。',
+      txt:'いま必要なのは決心ではなく、<b>体験1つ</b>です。<br>朝5時の収穫、腰の痛み、選果の細かさ。それを味わっても「やりたい」と思えるか。<br>ここを通って初めて、思いつきが<b>職業の選択</b>になります。'
+    }
+  },
+  plan:{
+    employ:[
+      ['1〜2か月','求人を3件そろえて比べる','未経験可の農業求人から。給料・休日・住居の補助を横に並べます'],
+      ['3〜4か月','気になる農園に見学を申し込む','1日でも現場を見ると、求人票の文字が具体的になります'],
+      ['5〜6か月','家族と生活の変化を話す','収入が下がる期間と、どこに住むか。ここを飛ばすと後で必ず止まります'],
+      ['7〜9か月','応募して、面接を受ける','「なぜいちごか」を自分の言葉で言えれば十分です'],
+      ['10〜12か月','転職して、ひと作型を経験する','育てる・採る・出すを一周します。ここから先は現場が教えてくれます']
+    ],
+    now:[
+      ['1〜2か月','開業資金の全体像を出す','ハウス・苗・設備・運転資金。相場を調べて総額を確定させます'],
+      ['3〜4か月','就農地を決めて、農地を探す','産地によって条件が3倍変わります。必ず現地に行って決めます'],
+      ['5〜6か月','制度融資と補助金に申し込む','自己資金だけで始めないでください。青年等就農資金などが使えます'],
+      ['7〜9か月','売り先を先に1つ確保する','JAだけだと単価が読めません。直販か契約先を作ってから建てます'],
+      ['10〜12か月','ハウスを建てて、作付けする','ここまで来たら、あとはひと作型を走り切るだけです']
+    ],
+    step:[
+      ['1〜2か月','産地を3つ 見くらべる','栃木・福岡・静岡あたりを想定。気候・土地代・研修制度・売り先を比べます'],
+      ['3〜5か月','週末の短期研修に行く','「いちごが好き」と「毎日世話ができる」は別。体で確かめる時期です'],
+      ['6〜8か月','農家3軒に、お金の話を聞く','1棟あたりいくら採れて、いくらで売れて、いくら残るか。夢ではなく商売として見ます'],
+      ['9〜12か月','農家で働くか、長期研修に入る','ひと作型 まるごと経験します。ここまで来れば失敗の確率が大きく下がります'],
+      ['13〜15か月','やる／やらないを決める','土地・お金・売り先・収量の見込みが揃えば独立。揃わなければ働き続ける、でOKです']
+    ]
+  },
+  handoff:[
+    ['🌾','新規就農の相談窓口','産地選びと補助金を無料で相談','var(--mint-lt)'],
+    ['📋','農業求人サービス','未経験OKのいちご農家の求人','var(--sun-lt)'],
+    ['🏦','就農資金の相談','無利子の制度融資について','var(--sky-lt)']
+  ]
+},
+
+/* ---------------- カフェ ---------------- */
+cafe:{
+  theme:'カフェを開きたい', emoji:'☕️', short:'カフェ開業',
+  buildLog:[
+    'テーマを読みとりました：<b>飲食店の開業（カフェ）</b>',
+    '判断に効く項目を選定：資金・立地・経験・規模',
+    '関係のない質問を8個 除外しました',
+    '質問は<b>9問</b>です。だいたい30秒です'
+  ],
+  extraQ:[
+    {id:'exp', lb:'飲食の経験', q:'飲食のお仕事の経験は？', why:'カフェは「作れる」より「回せる」が大事なので聞いています',
+     opts:[['まったくない','　'],['アルバイトで少し','🧑‍🍳'],['1〜3年','☕️'],['3年以上','👨‍🍳']], def:'まったくない'},
+    {id:'place', lb:'出したい場所', q:'お店を出したいのは？', why:'家賃が利益をいちばん左右します',
+     opts:[['都心・駅前','🏙'],['住宅街・郊外','🏡'],['地元に戻って','🌾'],['まだ決めてない','💭']], def:'住宅街・郊外'},
+    {id:'size', lb:'お店の規模', q:'どのくらいのお店？', why:'席数で必要なお金が3倍くらい変わります',
+     opts:[['ひとりで小さく','🕊'],['10席くらい','🪑'],['20席以上','🍽'],['まだわからない','💭']], def:'10席くらい'}
+  ],
+  researchLog:[
+    'カフェの開業費用の相場を確認（席数別）',
+    '飲食店の1年目・3年目の生存率を収集',
+    '物件の家賃と、原価率・人件費の目安を確認',
+    '間借り・シェアキッチンなど小さく始める方法を調査',
+    '閉店した店の理由を分析',
+    'あなたの貯金・経験と突き合わせ中'
+  ],
+  verdict:{
+    badge:'AIのこたえ',
+    ans:'やれます。<br>でも<em>いきなり物件を借りないで</em>ください。',
+    body:'カフェは<b>作れること</b>より<b>毎日 回せること</b>で決まります。あなたは資金の余裕はありますが、飲食の現場経験がありません。<br>いま物件を借りると、<b>家賃を払いながら</b>その練習をすることになります。<br>先に「間借り」で週1日だけ出してみるのが、いちばん安いテストです。',
+    facts:[['いま向いてる度','52','/100'],['準備できるお金','800','万円'],['小さく始めるなら','80','万円〜'],['飲食経験','0','年']],
+    assume:'※ 30代・会社員・年収500〜700万・貯金500〜1000万・住宅街で10席くらい、として計算しています'
+  },
+  paths:[
+    {id:'stay', base:true, nm:'今のまま（くらべる基準）', tg:'この道と比べます', em:'🏢', col:'sky',
+     mets:[['3年の収入','1,800万'],['むずかしさ','かんたん'],['夢への近さ','なし']],
+     detail:'いちばん安全です。ただ「開きたかったな」は残ります。<br>カフェは<b>80万円から試せる</b>時代なので、試さずに諦めるのはもったいないです。'},
+    {id:'employ', nm:'A｜カフェで働いてみる', tg:'週末バイトから覚える', em:'🧑‍🍳', col:'mint',
+     mets:[['3年の収入','1,600万'],['むずかしさ','かんたん'],['夢への近さ','少し近い']],
+     detail:'いまの仕事を続けたまま、週1でカフェのアルバイトに入ります。<br><b>お金をもらいながら</b>現場を知れるので、コストはほぼゼロ。ピーク時の忙しさに耐えられるかが分かります。'},
+    {id:'now', nm:'B｜物件を借りて開店', tg:'本格的なお店。固定費が重い', em:'🏪', col:'berry',
+     mets:[['3年の収入','-300〜700万'],['むずかしさ','とてもむずかしい'],['夢への近さ','とても近い']],
+     detail:'内装・厨房で<b>700〜1,200万円</b>。開けた瞬間から家賃と人件費が毎月出ていきます。<br>お客さんが来なくても<b>費用は止まりません</b>。経験ゼロでこの状態に入るのは、いちばん危ないです。'},
+    {id:'step', nm:'C｜間借りから始める', tg:'AIのおすすめ', em:'🌤', col:'orange', rec:true,
+     mets:[['3年の収入','1,400〜1,900万'],['むずかしさ','ふつう'],['夢への近さ','いちばん近い']],
+     detail:'夜だけ空いている店を借りて、<b>週1日だけ</b>自分のカフェを開きます。初期費用は<b>80万円ほど</b>。<br>会社員のまま、メニューも値段も接客も全部ためせます。<br>常連が付いてから、はじめて物件を探します。'}
+  ],
+  futures:{
+    stay:{
+      y1:{ttl:'カフェに行くたび、内装の写真を撮っている',
+        txt:'仕事は順調。休日はカフェ巡り。<span class="hl-b">写真フォルダに200枚たまった</span>けれど、何も始めていない。',
+        st:[['年収','620万円'],['貯金','980万円'],['お店','なし'],['満足度','ふつう']]},
+      y3:{ttl:'「いつかやりたい」が3年目に入った',
+        txt:'貯金は増えた。でも<span class="hl-b">やることは何も決まっていない</span>。<br>近所に新しいカフェができて、少しだけ悔しかった。',
+        st:[['年収','700万円'],['貯金','1,400万円'],['お店','なし'],['満足度','すこし低い']]},
+      y5:{ttl:'夢のままにしておいた5年',
+        txt:'生活に不満はない。ただ、いちど<span class="hl-b">「自分の味」を人に出す経験</span>をしないまま40代に入った。<br>やらない理由は、毎年ひとつずつ増えていく。',
+        st:[['年収','780万円'],['貯金','2,100万円'],['お店','なし'],['満足度','ふつう']]}
+    },
+    employ:{
+      y1:{ttl:'週1のバイト。土曜のピークは戦争だと知った',
+        txt:'近所のカフェで週1。<span class="hl">12時から14時のピークがどれだけ大変か</span>を体で知った。<br>「好きなことを仕事に」の裏側が見えたのは大きい。給料は変わらないので貯金は増えている。',
+        st:[['年収','660万円'],['貯金','1,020万円'],['お店','なし'],['満足度','高い']]},
+      y3:{ttl:'ドリンクもフードも作れる。数字も見せてもらえた',
+        txt:'店長に信頼され、<span class="hl">原価率と家賃の話まで教えてもらえた</span>。<br>「自分の店を持つ」がぼんやりした憧れから、計算できる話に変わった。',
+        st:[['年収','700万円'],['貯金','1,300万円'],['お店','なし'],['満足度','高い']]},
+      y5:{ttl:'開くかどうかを、自分で判断できる状態',
+        txt:'5年ぶん現場を知った。<span class="hl">開かない選択をしても後悔しない</span>ところまで来た。<br>その気になれば、いつでも動ける。',
+        st:[['年収','740万円'],['貯金','1,700万円'],['お店','なし'],['満足度','高い']]}
+    },
+    now:{
+      y1:{ttl:'お店は開いた。でも平日の昼が、しずかすぎる',
+        txt:'内装に900万。念願のオープン。<br>ただ<span class="hl-b">平日の客数が想定の半分</span>。家賃と人件費は毎月きっちり出ていく。<br>接客と仕込みと経理を全部ひとりでやって、<span class="hl-b">休みが月1日</span>になった。',
+        st:[['年収','-180万円'],['貯金','40万円'],['お店','あり'],['満足度','低い']]},
+      y3:{ttl:'続いていれば常連がついた。多くはここまでに閉じる',
+        txt:'固定客ができ、売上は安定してきた。<br>ただ、<span class="hl-b">飲食店の3年での閉店はかなり多い</span>。分かれ目は運ではなく、<span class="hl-b">開ける前に客層を確かめたか</span>だった。',
+        st:[['年収','-100〜280万円'],['貯金','0〜200万円'],['お店','あり'],['満足度','ふりはば大']]},
+      y5:{ttl:'残れば自分の城。ただし借金の返済はまだ続く',
+        txt:'常連に支えられ、店は続いている。<br>ただ<span class="hl-b">開業時の借入の返済</span>があと3年ある。<br>もし間借りから始めていれば、この借入は半分で済んだ。',
+        st:[['年収','60〜420万円'],['貯金','80〜500万円'],['お店','あり'],['満足度','ふりはば大']]}
+    },
+    step:{
+      y1:{ttl:'土曜だけの、自分のカフェ',
+        txt:'夜だけ営業のバーを昼間だけ借りて、<span class="hl">土曜だけのカフェ</span>を始めた。初期費用は78万円。<br>1日20人。まだ赤字だけど、<span class="hl">会社の給料があるので怖くない</span>。<br>メニューを3回 作り直した。値段も変えた。全部 試せる。',
+        st:[['年収','610万円'],['貯金','870万円'],['お店','週1日'],['満足度','とても高い']]},
+      y3:{ttl:'常連ができてから、はじめて物件を借りた',
+        txt:'2年で常連が120人。<span class="hl">来てくれる人がいる状態で</span>物件を探せたので、家賃の判断を間違えずに済んだ。<br>内装は600万に抑えた。オープン初日から、知っている顔が来てくれた。',
+        st:[['年収','120万円'],['貯金','360万円'],['お店','あり'],['満足度','とても高い']]},
+      y5:{ttl:'続いている。数字も、体力も、無理がない',
+        txt:'週5営業＋定休2日。ひとりで回せる規模にしたので、<span class="hl">休みがちゃんとある</span>。<br>間借りの2年間で失敗を先に済ませたぶん、開店後がおだやかだった。',
+        st:[['年収','430万円'],['貯金','620万円'],['お店','あり'],['満足度','とても高い']]}
+    }
+  },
+  series:{
+    income :{stay:[620,620,700,780], employ:[620,660,700,740], now:[620,-180,90,240], step:[620,610,120,430]},
+    savings:{stay:[800,980,1400,2100], employ:[800,1020,1300,1700], now:[800,40,100,290], step:[800,870,360,620]},
+    dream  :{stay:[5,4,2,0],  employ:[5,30,45,50],  now:[5,70,85,92],  step:[5,62,90,96]},
+    happy  :{stay:[50,50,42,45], employ:[50,68,74,76], now:[50,30,48,58], step:[50,82,90,94]}
+  },
+  chartNote:{
+    income:'Bは開店1年目がいちばん深く沈みます。ここを貯金で耐えられるかがすべてです。',
+    savings:'Bは1年目で貯金がほぼゼロになります。Cは間借りなので減り方がゆるやかです。',
+    dream:'Aは「働くだけ」なので、自分の店には近づきません。CはBとほぼ同じ場所に、安全に着きます。',
+    happy:'Cが最初から高いのは、会社の給料を持ったまま自分の店を出せているからです。'
+  },
+  checks:[
+    ['ok','開業に必要なお金','貯金800万。小さく始めるなら十分すぎるほどです'],
+    ['ok','新しいことを覚える力','いまの仕事の内容から、学習面は問題なしと判断'],
+    ['ok','小さく試せる選択肢がある','間借り・シェアキッチンなら80万円ほどで開始できます'],
+    ['ng','飲食の現場経験','0年。ピーク時に回せるかが未検証です'],
+    ['ng','自分の味・看板メニュー','未定。「何のお店か」が言えないと集客できません'],
+    ['ng','どこに、誰に出すか','立地と客層が未定。家賃の判断はここで決まります']
+  ],
+  first:{
+    employ:{
+      big:'週1でいい。<br>好きなカフェに「働けませんか」と聞く。',
+      txt:'求人が出ていなくても大丈夫です。<b>通っている店に、直接 声をかける</b>だけ。<br>断られても失うものはありません。受かれば、お金をもらいながら現場が見られます。'
+    },
+    now:{
+      big:'契約する前に、<br>その物件の前に3日 立ってみる。',
+      txt:'家賃はいちど契約すると止まりません。<b>平日の昼・土曜の昼・夜</b>に現地へ行って、通る人を数えてください。<br>不動産屋の「人通りが多い」より、自分で数えた数字のほうが正確です。'
+    },
+    step:{
+      big:'物件を探す前に、<br>1日だけ「間借り」で出してみる。',
+      txt:'必要なのは決心ではなく、<b>1日の営業</b>です。<br>お客さんが何人来て、いくら使って、何を残していくか。<br>これを80万円で知れるなら、900万円の内装より先にやるべきです。'
+    }
+  },
+  plan:{
+    employ:[
+      ['1か月','好きなカフェを5軒まわる','客として。忙しい時間帯と、席の回り方を見ます'],
+      ['2〜3か月','週1のアルバイトに応募する','求人サイトと、直接声をかける。両方やります'],
+      ['4〜6か月','ピーク時間に入れてもらう','土日の12〜14時。ここに耐えられるかが全てです'],
+      ['7〜9か月','ドリンクとフードを任せてもらう','作る側に回ります。オペレーションが見えてきます'],
+      ['10〜12か月','店長に数字の話を聞く','家賃・原価率・人件費。憧れが、計算できる話に変わります']
+    ],
+    now:[
+      ['1〜2か月','事業計画と資金計画を作る','内装・厨房・運転資金。総額と、回収にかかる月数を出します'],
+      ['3〜4か月','公庫の創業融資に申し込む','自己資金だけで始めると、赤字の期間に耐えられません'],
+      ['5〜7か月','物件を10件は見る','家賃と客層。1件目で決めないでください'],
+      ['8〜10か月','内装と保健所の許可を進める','図面・設備・食品衛生。工期には余裕を持たせます'],
+      ['11〜12か月','プレオープンして開店する','知り合いを呼んで、オペレーションを一度 回しておきます']
+    ],
+    step:[
+      ['1〜2か月','好きなカフェ5軒の数字を推測する','席数・客数・単価から売上を計算。憧れを商売の目で見る練習です'],
+      ['3〜4か月','週1でカフェのバイトに入る','ピーク時の忙しさを体で知ります。ここで無理なら開業も無理です'],
+      ['5〜6か月','間借りできる場所を探す','夜だけ営業の店、シェアキッチン、イベント出店から始めます'],
+      ['7〜12か月','月2回、自分の店を開く','メニュー・値段・接客を試します。常連が何人つくかを数えます'],
+      ['13〜18か月','物件を借りるか決める','常連100人・月の黒字が見えたら物件へ。見えなければ間借りを続けます']
+    ]
+  },
+  handoff:[
+    ['🔑','間借り・シェアキッチン','週1から借りられる場所を探す','var(--sun-lt)'],
+    ['📋','飲食の求人サービス','未経験OK・週1のカフェ求人','var(--mint-lt)'],
+    ['🏦','開業資金の相談','日本政策金融公庫の創業融資','var(--sky-lt)']
+  ]
+},
+
+/* ---------------- 汎用（転職） ---------------- */
+generic:{
+  theme:'', emoji:'💼', short:'',
+  buildLog:[
+    'テーマを読みとりました：<b>未経験からの転職</b>',
+    '判断に効く項目を選定：資金・経験・働き方・期限',
+    '関係のない質問を7個 除外しました',
+    '質問は<b>9問</b>です。だいたい30秒です'
+  ],
+  extraQ:[
+    {id:'exp', lb:'その分野の経験', q:'その分野の経験は？', why:'ゼロからでも行けますが、通るルートが変わります',
+     opts:[['まったくない','　'],['独学でやっている','📚'],['少し仕事でやった','🧑‍💼'],['本業に近い','✅']], def:'まったくない'},
+    {id:'style', lb:'働き方の希望', q:'働き方の希望は？', why:'雇われるか独立かで、必要な準備がまったく違います',
+     opts:[['雇われて安定したい','🏢'],['独立したい','🚀'],['まず副業から','🌙'],['こだわらない','💭']], def:'まず副業から'},
+    {id:'down', lb:'年収ダウン', q:'年収が下がるのは大丈夫？', why:'未経験の転職は一度下がることが多いので、確認しています',
+     opts:[['下がってもいい','😌'],['1〜2割までなら','🤔'],['下げたくない','😣']], def:'1〜2割までなら'}
+  ],
+  researchLog:[
+    'その職種の未経験採用の実情を確認',
+    '年収レンジと、3年後の伸びを収集',
+    '必要な資格・スキル・学習期間を調査',
+    '未経験から入った人の実例を分析',
+    '副業から始めた場合の道すじを確認',
+    'あなたの条件と突き合わせ中'
+  ],
+  verdict:{
+    badge:'AIのこたえ',
+    ans:'やれます。<br>ただし<em>いきなり辞めるのは損</em>です。',
+    body:'未経験からの転職は<b>一度 年収が下がる</b>のがふつうです。ただ、いまの仕事を続けたまま<b>副業や独学で実績を1つ作る</b>と、この下がり幅が大きく縮みます。<br>いま辞めると「未経験・実績なし」で応募することになり、いちばん条件の悪い入り口になります。',
+    facts:[['いま向いてる度','61','/100'],['準備できるお金','800','万円'],['生活できる期間','22','か月'],['その分野の経験','0','年']],
+    assume:'※ 30代・会社員・年収500〜700万・貯金500〜1000万・まず副業から、として計算しています'
+  },
+  paths:[
+    {id:'stay', base:true, nm:'今のまま（くらべる基準）', tg:'この道と比べます', em:'🏢', col:'sky',
+     mets:[['3年の収入','1,800万'],['むずかしさ','かんたん'],['夢への近さ','なし']],
+     detail:'収入はいちばん安定します。ただ、<b>気になっている状態のまま</b>年だけ過ぎます。<br>やらない判断をするにしても、調べてから決めたほうが納得できます。'},
+    {id:'employ', nm:'A｜すぐ転職する', tg:'未経験枠でとにかく入る', em:'🚪', col:'mint',
+     mets:[['3年の収入','1,200万'],['むずかしさ','ふつう'],['夢への近さ','とても近い']],
+     detail:'いちばん早く環境が変わります。ただし<b>実績なしの状態</b>なので、選べる会社が限られ、年収も下がりがちです。<br>入ってしまえば毎日その仕事なので、成長は速いです。'},
+    {id:'now', nm:'B｜辞めて学校・独学', tg:'収入ゼロで一気に', em:'📚', col:'berry',
+     mets:[['3年の収入','800〜1,400万'],['むずかしさ','むずかしい'],['夢への近さ','かなり近い']],
+     detail:'集中できますが、<b>収入がない状態で学ぶ</b>のは焦りを生みます。<br>焦って決めた転職先は条件が悪くなりがちです。貯金があっても、あまり得をしにくい道です。'},
+    {id:'step', nm:'C｜副業で実績を作る', tg:'AIのおすすめ', em:'🌤', col:'orange', rec:true,
+     mets:[['3年の収入','1,500〜1,900万'],['むずかしさ','ふつう'],['夢への近さ','いちばん近い']],
+     detail:'いまの給料をもらったまま、<b>小さい実績を1つ</b>作ります。<br>「未経験です」ではなく「これを作りました」で応募できるので、<b>年収の下がり幅が半分になります</b>。<br>向いていなければ、辞めずに引き返せます。'}
+  ],
+  futures:{
+    stay:{
+      y1:{ttl:'求人サイトだけ、たまに開いている',
+        txt:'仕事は変わらず。<span class="hl-b">求人を見ては閉じる</span>のが月1回の習慣になった。',
+        st:[['年収','620万円'],['貯金','980万円'],['経験','0年'],['満足度','ふつう']]},
+      y3:{ttl:'年齢的に「未経験枠」が減ってきた',
+        txt:'貯金は増えた。ただ<span class="hl-b">未経験で採ってくれる年齢の上限</span>が近づいている。<br>選べる道が静かに減っていく。',
+        st:[['年収','700万円'],['貯金','1,400万円'],['経験','0年'],['満足度','すこし低い']]},
+      y5:{ttl:'今の会社で続ける前提になった',
+        txt:'40代。転職の話は自分の中から消えた。<br>安定はしているが、<span class="hl-b">選ばなかったのではなく、選べなくなった</span>のが少し引っかかる。',
+        st:[['年収','780万円'],['貯金','2,100万円'],['経験','0年'],['満足度','ふつう']]}
+    },
+    employ:{
+      y1:{ttl:'年収は下がった。でも毎日その仕事をしている',
+        txt:'未経験枠で転職。<span class="hl-b">年収は180万円 下がった</span>。<br>ただ毎日その仕事をしているので、覚えるスピードは独学の比ではない。',
+        st:[['年収','440万円'],['貯金','820万円'],['経験','1年'],['満足度','高い']]},
+      y3:{ttl:'戦力になった。年収も戻ってきた',
+        txt:'一人前として任される側に。<span class="hl">年収は転職前の水準に戻った</span>。<br>2年目の停滞期はきつかったが、抜けた。',
+        st:[['年収','580万円'],['貯金','900万円'],['経験','3年'],['満足度','高い']]},
+      y5:{ttl:'その業界の人になった',
+        txt:'いまでは中途採用の面接をする側。<span class="hl">前職の経験が武器になる場面</span>も増えた。<br>回り道に見えたが、5年で追い越した。',
+        st:[['年収','700万円'],['貯金','1,300万円'],['経験','5年'],['満足度','とても高い']]}
+    },
+    now:{
+      y1:{ttl:'勉強はできた。でも、貯金が減るのが怖い',
+        txt:'退職して学校へ。時間はたっぷりある。<br>ただ<span class="hl-b">毎月ゼロ収入で貯金が減る</span>のが精神的にきつく、後半は焦って就職活動をしていた。',
+        st:[['年収','0万円'],['貯金','480万円'],['経験','1年'],['満足度','ふつう']]},
+      y3:{ttl:'入れたが、焦って決めた会社だった',
+        txt:'就職はできた。ただ<span class="hl-b">選ぶ余裕がなかった</span>ので条件はよくない。<br>働きながら学んだ人と、ここで差がついた。',
+        st:[['年収','420万円'],['貯金','420万円'],['経験','3年'],['満足度','ふつう']]},
+      y5:{ttl:'追いついた。ただ、遠回りだった',
+        txt:'5年で実力はついた。<br>でも振り返ると、<span class="hl-b">辞めずに副業から始めても同じ場所に来られた</span>。減った貯金のぶんだけ損だった。',
+        st:[['年収','620万円'],['貯金','780万円'],['経験','5年'],['満足度','高い']]}
+    },
+    step:{
+      y1:{ttl:'会社員のまま、小さい実績が1つできた',
+        txt:'平日夜と週末で副業。<span class="hl">お金をもらってやった仕事が3件</span>。<br>給料は変わらないので貯金は増えている。<span class="hl">「未経験です」と言わなくてよくなった</span>のが大きい。',
+        st:[['年収','680万円'],['貯金','1,020万円'],['経験','1年'],['満足度','高い']]},
+      y3:{ttl:'実績を持って転職。下がり幅が半分で済んだ',
+        txt:'2年目に転職。実績があったので<span class="hl">年収の下がり幅は80万円</span>で済んだ。<br>入社時点で即戦力扱い。1年目から仕事を任された。',
+        st:[['年収','600万円'],['貯金','1,080万円'],['経験','3年'],['満足度','とても高い']]},
+      y5:{ttl:'転職前を超えた。副業も続いている',
+        txt:'年収は転職前を超えた。副業も細く続いていて、<span class="hl">収入源が2つある</span>。<br>会社に依存しない状態を、辞めずに作れた。',
+        st:[['年収','780万円'],['貯金','1,600万円'],['経験','5年'],['満足度','とても高い']]}
+    }
+  },
+  series:{
+    income :{stay:[620,620,700,780], employ:[620,440,580,700], now:[620,0,420,620], step:[620,680,600,780]},
+    savings:{stay:[800,980,1400,2100], employ:[800,820,900,1300], now:[800,480,420,780], step:[800,1020,1080,1600]},
+    dream  :{stay:[5,4,2,0],  employ:[5,60,85,92],  now:[5,50,72,84],  step:[5,45,88,96]},
+    happy  :{stay:[50,50,42,45], employ:[50,72,82,88], now:[50,52,60,72], step:[50,74,90,94]}
+  },
+  chartNote:{
+    income:'Bだけが1年目にゼロになります。Cは会社に居るので、下がらないまま実績が増えます。',
+    savings:'Cだけが減りません。副業ぶんが乗るので、むしろ増えます。',
+    dream:'Aがいちばん早く近づきますが、3年目でCが追い抜きます。実績を持って入るかどうかの差です。',
+    happy:'Bの停滞は「収入ゼロで学ぶ焦り」から来ています。'
+  },
+  checks:[
+    ['ok','生活を守れる貯金','貯金800万。1年 収入が落ちても耐えられます'],
+    ['ok','いまの仕事の経験','前職の経験が評価される職種です。ゼロからではありません'],
+    ['ok','年収が下がることを受け入れられる','1〜2割までなら可、とのこと。現実的な範囲です'],
+    ['ng','その分野の実績','0件。ここが応募のときにいちばん効きます'],
+    ['ng','業界の知り合い','なし。求人サイト以外の入り口がない状態です'],
+    ['ng','いつまでにやるかの期限','ぼんやりしていると3年経ちます']
+  ],
+  first:{
+    employ:{
+      big:'応募する前に、<br>その仕事の人に1人 話を聞く。',
+      txt:'求人票ではわからないことがあります。<b>1日の流れ、しんどいところ、何年で何ができるようになるか</b>。<br>1人に聞くだけで、志望動機が借り物でなくなります。'
+    },
+    now:{
+      big:'辞める前に、<br>貯金が尽きる月を計算する。',
+      txt:'収入ゼロの期間は、想像するより短く感じません。<b>貯金 ÷ 毎月の生活費</b>を計算して、その月をカレンダーに書いてください。<br>その月が見えていれば、焦って就職先を決めずに済みます。'
+    },
+    step:{
+      big:'辞める前に、<br>お金をもらう仕事を1件だけ受ける。',
+      txt:'金額は5,000円でもかまいません。<br><b>お金をもらってやった</b>という事実が、「未経験」を「経験者」に変えます。<br>この1件があるかないかで、応募できる求人の数が変わります。'
+    }
+  },
+  plan:{
+    employ:[
+      ['1か月','その仕事の人に3人 話を聞く','カジュアル面談やOB訪問で。想像を事実に変えます'],
+      ['2〜3か月','職務経歴書を書く','いまの経験のどこが活きるかを言葉にします'],
+      ['4〜6か月','未経験可の求人に応募する','エージェントにも登録して、数を出します'],
+      ['7〜9か月','面接を受けて、条件を比べる','年収だけでなく「教えてもらえる環境か」を見ます'],
+      ['10〜12か月','転職して、覚える側に回る','最初の1年は下がります。2年目から戻っていきます']
+    ],
+    now:[
+      ['1か月','生活費と貯金から「持つ月数」を出す','ここが全ての前提になります。カレンダーに書いてください'],
+      ['2〜3か月','学ぶ場所を決める','スクール・独学・職業訓練。教育訓練給付が使えるか確認します'],
+      ['4〜9か月','集中して学ぶ','成果物を作りながら学びます。証拠が残る学び方を選んでください'],
+      ['10〜12か月','実績を持って応募する','学んだだけでは弱いので、作ったものを見せます'],
+      ['13〜15か月','条件を比べて決める','焦って1社目に決めないための余力を、必ず残しておきます']
+    ],
+    step:[
+      ['1か月','その仕事をしている人の話を3人ぶん聞く','実際の1日、いいところ、しんどいところ。想像を事実に変えます'],
+      ['2〜3か月','小さい成果物を1つ作る','完璧でなくていいので、人に見せられる形にします'],
+      ['4〜6か月','お金をもらう仕事を1件受ける','ここが分かれ目。無料の手伝いではなく、対価をもらいます'],
+      ['7〜12か月','実績を3件に増やす','応募のときに見せられる状態にします'],
+      ['13〜18か月','実績を持って応募する','「未経験です」ではなく「これを作りました」で話せます']
+    ]
+  },
+  handoff:[
+    ['🤝','転職エージェント相談','未経験可の求人を紹介してもらう','var(--mint-lt)'],
+    ['💬','業界の人に話を聞く','OB訪問・カジュアル面談サービス','var(--sun-lt)'],
+    ['📚','学びなおしの給付金','教育訓練給付で受講料が戻ります','var(--sky-lt)']
+  ]
+}
+};
+
+/* ============================================================
+   状態
+   ============================================================ */
+let D = null;          // 選択中データセット
+let QS = [];           // 質問リスト
+let qi = 0;            // 質問インデックス
+let answers = {};
+let curPath = 'step';
+let curYear = 'y1';
+let themeText = '';
+
+/* ============================================================
+   画面遷移
+   ============================================================ */
+function show(id, topbar=true){
+  document.querySelectorAll('.stage').forEach(s=>s.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+  document.getElementById('topbar').classList.toggle('on', topbar);
+  document.querySelectorAll('.dock').forEach(d=>d.classList.remove('on'));
+  if(id==='s-theme') document.getElementById('dock-theme').classList.add('on');
+  if(id==='s-result') document.getElementById('dock-result').classList.add('on');
+  window.scrollTo(0,0);
+}
+
+function login(){ show('s-theme'); }
+
+function pickTheme(key){
+  document.getElementById('themeInput').value = DATA[key].theme || 'Web業界に転職したい';
+  submitTheme(key);
+}
+
+function submitTheme(forceKey){
+  const txt = document.getElementById('themeInput').value.trim() || 'いちご農園をやりたい';
+  let key = forceKey;
+  if(!key){
+    if(/いちご|イチゴ|苺|農|就農|畑/.test(txt)) key='strawberry';
+    else if(/カフェ|喫茶|飲食|コーヒー|珈琲|店/.test(txt)) key='cafe';
+    else key='generic';
+  }
+  D = DATA[key];
+  themeText = txt;
+  if(key==='generic'){ D.theme = txt; D.short = txt; }
+
+  QS = COMMON_Q.concat(D.extraQ);
+  qi = 0; answers = {};
+
+  document.getElementById('buildTitle').innerHTML = `「${txt}」<br>を読みとっています`;
+  show('s-building');
+  runLog('buildLog', D.buildLog, 520, ()=>{ renderQ(); show('s-q'); });
+}
+
+/* ローディングログ */
+function runLog(elId, lines, interval, done){
+  const el = document.getElementById(elId);
+  el.innerHTML = lines.map(l=>`<div><span class="ic">▸</span><span>${l}</span></div>`).join('');
+  const rows = el.querySelectorAll('div');
+  rows.forEach((r,i)=>{
+    setTimeout(()=>{
+      r.classList.add('on');
+      if(i>0){ rows[i-1].classList.add('done'); rows[i-1].querySelector('.ic').textContent='✓'; }
+      if(i===rows.length-1){
+        setTimeout(()=>{ r.classList.add('done'); r.querySelector('.ic').textContent='✓'; done&&setTimeout(done,420); }, interval);
+      }
+    }, i*interval);
+  });
+}
+
+/* ============================================================
+   質問
+   ============================================================ */
+function renderQ(){
+  const q = QS[qi];
+  document.getElementById('qbar').style.width = ((qi)/QS.length*100)+'%';
+  document.getElementById('qcount').textContent = `${qi+1}問目 / ${QS.length}問`;
+  document.getElementById('qleft').textContent = qi===QS.length-1 ? 'これで最後です' : `あと${QS.length-qi-1}問`;
+  document.getElementById('qwhyText').innerHTML = q.why;
+  document.getElementById('qtitle').textContent = q.q;
+
+  document.getElementById('qopts').innerHTML = q.opts.map(([label,em])=>`
+    <button class="opt ${answers[q.id]===label?'on':''}" onclick="answer('${q.id}',this,${JSON.stringify(label).replace(/"/g,'&quot;')})">
+      ${em.trim()?`<span class="em">${em}</span>`:''}
+      <span>${label}</span>
+      <span class="ck">✓</span>
+    </button>`).join('');
+}
+
+function answer(id, el, label){
+  answers[id]=label;
+  el.parentNode.querySelectorAll('.opt').forEach(o=>o.classList.remove('on'));
+  el.classList.add('on');
+  setTimeout(nextQ, 220);
+}
+function skipQ(){ answers[QS[qi].id] = QS[qi].def + '（AI推定）'; nextQ(); }
+function nextQ(){
+  if(qi < QS.length-1){ qi++; renderQ(); window.scrollTo(0,0); }
+  else{
+    show('s-research');
+    runLog('researchLog', D.researchLog, 620, ()=>{ show('s-result'); renderResult(); });
+  }
+}
+function prevQ(){
+  if(qi>0){ qi--; renderQ(); }
+  else show('s-theme');
+}
+
+/* ============================================================
+   結果
+   ============================================================ */
+const COLMAP = {sky:'var(--sky-lt)', mint:'var(--mint-lt)', berry:'var(--berry-lt)', orange:'var(--orange-lt)'};
+const LINECOL = {stay:'#A9A29A', employ:'#2A9D74', now:'#D4405F', step:'#E8681C'};
+const GLOWCOL = {stay:'rgba(169,162,154,.22)', employ:'rgba(42,157,116,.22)',
+                 now:'rgba(212,64,95,.22)', step:'rgba(232,104,28,.22)'};
+const METRIC = {
+  income :{lb:'年収',       unit:'万円', fmt:v=>v+'万'},
+  savings:{lb:'貯金',       unit:'万円', fmt:v=>v+'万'},
+  dream  :{lb:'夢への近さ', unit:'点',   fmt:v=>v+''},
+  happy  :{lb:'満足度',     unit:'点',   fmt:v=>v+''}
+};
+let curMetric = 'income';
+
+function renderResult(){
+  const v = D.verdict;
+  document.getElementById('vBadge').textContent = v.badge;
+  document.getElementById('vAns').innerHTML = v.ans;
+  document.getElementById('vBody').innerHTML = v.body;
+  document.getElementById('vFacts').innerHTML = v.facts.map(([l,n,u])=>`
+    <div class="fact"><div class="l">${l}</div><div class="v">${n}<small>${u}</small></div></div>`).join('');
+  document.getElementById('vAssume').textContent = v.assume;
+
+  // 「今のまま」は選ぶ対象ではなく、比べる基準としてだけ扱う
+  document.getElementById('pathList').innerHTML = D.paths.filter(p=>!p.base).map(p=>`
+    <button class="pcard ${p.id===curPath?'on':''}" data-p="${p.id}" onclick="selPath('${p.id}')">
+      ${p.rec?'<span class="rec pill o">⭐️ おすすめ</span>':''}
+      <div class="ph">
+        <div class="em" style="background:${COLMAP[p.col]}">${p.em}</div>
+        <div><div class="nm">${p.nm}</div><div class="tg">${p.tg}</div></div>
+      </div>
+      <div class="pm">${p.mets.map(([l,val])=>`<div><span>${l}</span><b>${val}</b></div>`).join('')}</div>
+    </button>`).join('');
+
+  const chk = st => D.checks.filter(c=>c[0]===st).map(([s,t,d])=>`
+    <div class="check">
+      <span class="st ${s}">${s==='ok'?'✓':'✕'}</span>
+      <div class="tx">${t}<small>${d}</small></div>
+    </div>`).join('');
+  document.getElementById('checksOk').innerHTML = chk('ok');
+  document.getElementById('checksNg').innerHTML = chk('ng');
+
+
+  document.getElementById('handoff').innerHTML = D.handoff.map(([ic,t,s,bg])=>`
+    <button class="hoff">
+      <div class="ic" style="background:${bg}">${ic}</div>
+      <div><b>${t}</b><div class="small">${s}</div></div>
+      <div class="go">›</div>
+    </button>`).join('');
+
+  renderMyInput();
+  selPath(curPath);
+  renderChart();
+  tune();
+  markTuneSel();
+  requestAnimationFrame(movePointer);
+}
+
+/* サイドナビ下：入力した内容のふりかえり */
+function renderMyInput(){
+  const rows = QS.map(q=>{
+    const a = answers[q.id];
+    if(!a) return '';
+    const est = a.includes('（AI推定）');
+    return `<div class="mi-row">
+      <dt>${q.lb}</dt>
+      <dd>${a.replace('（AI推定）','')}${est?' <em>推定</em>':''}</dd>
+    </div>`;
+  }).join('');
+  document.getElementById('myInput').innerHTML = `
+    <div class="mi-h">あなたが入力した内容</div>
+    <div class="mi-dream"><i>${D.emoji}</i>${themeText || D.theme}</div>
+    <dl style="margin:0">${rows}</dl>
+    <button class="mi-edit" onclick="restart()">入力しなおす</button>`;
+}
+
+function selPath(id){
+  curPath = id;
+  document.querySelectorAll('.pcard').forEach(p=>p.classList.toggle('on', p.dataset.p===id));
+  const p = D.paths.find(x=>x.id===id);
+  document.getElementById('pathDetail').innerHTML = `
+    <div class="ph" style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <div style="width:38px;height:38px;border-radius:13px;display:grid;place-items:center;font-size:19px;flex:none;background:${COLMAP[p.col]}">${p.em}</div>
+      <div><h3 style="margin:0">${p.nm}</h3><div style="font-size:11.5px;color:var(--muted)">${p.tg}</div></div>
+    </div>
+    <p class="lead" style="font-size:13.5px;line-height:1.95">${p.detail}</p>`;
+
+  movePointer();
+  renderScene();
+  renderChart();
+  renderAction();
+  markTuneSel();
+}
+
+/* 「はじめの一歩」は、選んでいる道の一歩を出す */
+function renderAction(){
+  const p = D.paths.find(x=>x.id===curPath);
+  const f = D.first[curPath], pl = D.plan[curPath];
+
+  document.getElementById('actFor').innerHTML =
+    `<span class="af-nm"><i style="background:${LINECOL[curPath]}"></i>${p.nm}</span> を選んだ場合`
+    + (p.rec ? '<span class="pill o" style="margin-left:8px">⭐️ AIのおすすめ</span>' : '');
+
+  document.getElementById('fsBig').innerHTML = f.big;
+  document.getElementById('fsTxt').innerHTML = f.txt;
+  document.getElementById('planTl').innerHTML = pl.map(([w,t,s])=>`
+    <div class="tlrow"><div class="w">${w}</div><div class="t"><b>${t}</b><div class="small">${s}</div></div></div>`).join('');
+}
+
+/* 選択中カードとパネルをつなぐ三角形の位置 */
+function movePointer(){
+  const card = document.querySelector('.pcard.on'), integ = document.getElementById('integ');
+  if(!card || !integ) return;
+  const c = card.getBoundingClientRect(), p = integ.getBoundingClientRect();
+  if(!p.width) return;
+  integ.style.setProperty('--px', Math.round(c.left + c.width/2 - p.left) + 'px');
+}
+
+document.getElementById('yearTabs').addEventListener('click', e=>{
+  const b = e.target.closest('button'); if(!b) return;
+  document.querySelectorAll('#yearTabs button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); curYear = b.dataset.y;
+  renderScene();
+});
+
+function renderScene(){
+  const f = D.futures[curPath][curYear];
+  const lbl = {y1:'1年後',y3:'3年後',y5:'5年後'}[curYear];
+  document.getElementById('scWhen').textContent = lbl + ' の あなた';
+  document.getElementById('scTtl').textContent = f.ttl;
+  document.getElementById('scTxt').innerHTML = f.txt;
+  document.getElementById('scStats').innerHTML = f.st.map(([l,v])=>`
+    <div class="sstat"><div class="l">${l}</div><div class="v">${v}</div></div>`).join('');
+
+  // 同じ時期の「今のまま」を、常に並べて見せる
+  const b = D.futures.stay[curYear];
+  document.getElementById('baseCmp').innerHTML = `
+    <div class="bch">くらべる基準 ／ 同じころ、今のままだと</div>
+    <div class="bct">${b.ttl}</div>
+    <div class="bcs">${b.st.map(([l,v])=>`<span><i>${l}</i>${v}</span>`).join('')}</div>`;
+}
+
+/* ============================================================
+   グラフ（4つの道 × 今/1年/3年/5年）
+   ============================================================ */
+const XLAB = ['いま','1年後','3年後','5年後'];
+
+/* いまのスライダー条件を読む */
+function conds(){
+  return {
+    save:+document.getElementById('tSave').value,
+    prep:+document.getElementById('tPrep').value,
+    hour:+document.getElementById('tHour').value,
+    move:moveOK
+  };
+}
+/* 道ごとの「うまくいく確率」 */
+function rateOf(id, c){
+  const t = TUNE[id];
+  return Math.max(5, Math.min(95,
+    t.b + t.s*(c.save/2000) + t.p*(c.prep/36) + t.h*(c.hour/30) + (c.move?t.m:0)));
+}
+const BASE_C = {save:800, prep:15, hour:8, move:1};
+
+/* 条件を反映させた系列を返す（既定条件なら元データのまま） */
+function seriesOf(metric, id){
+  const c = conds(), base = D.series[metric][id];
+  const f = Math.max(.6, Math.min(1.25, rateOf(id,c)/rateOf(id,BASE_C)));
+  if(metric==='savings'){
+    // 出発点はスライダーの貯金そのもの。差は年を追うごとに薄まる
+    const d = c.save - BASE_C.save;
+    return base.map((v,i)=> Math.round(v + d*(1 - i*0.14)) );
+  }
+  if(metric==='income'){
+    return base.map((v,i)=> i===0 ? v : Math.round(v*(0.72 + 0.28*f)) );
+  }
+  return base.map((v,i)=> i===0 ? v : Math.round(Math.min(100, v*f)) );
+}
+
+function renderChart(){
+  if(!D) return;
+  const box = document.getElementById('chartBox');
+  const W = Math.max(300, box.clientWidth);
+  const isNarrow = W < 480;
+  const H = isNarrow ? 250 : 300;
+  const PL = isNarrow ? 44 : 56, PR = isNarrow ? 46 : 66, PT = 30, PB = 34;
+  const m = METRIC[curMetric];
+  const data = {};
+  D.paths.forEach(p=> data[p.id] = seriesOf(curMetric, p.id));
+
+  // 値域
+  let all = [];
+  D.paths.forEach(p=> all = all.concat(data[p.id]));
+  let lo = Math.min(...all), hi = Math.max(...all);
+  const pad = (hi-lo)*0.16 || 10;
+  lo = lo < 0 ? lo - pad : Math.max(0, lo - pad);
+  hi = hi + pad;
+  const step = niceStep((hi-lo)/4);
+  lo = Math.floor(lo/step)*step; hi = Math.ceil(hi/step)*step;
+
+  const x = i => PL + i*(W-PL-PR)/3;
+  const y = v => PT + (hi-v)/(hi-lo)*(H-PT-PB);
+
+  let g = `<text x="4" y="12" font-size="10.5" fill="#B0A090" font-weight="700">単位：${m.unit}</text>`;
+  // 横グリッド
+  for(let v=lo; v<=hi+.001; v+=step){
+    const zero = Math.abs(v)<.001;
+    g += `<line x1="${PL}" y1="${y(v)}" x2="${W-PR+6}" y2="${y(v)}"
+            stroke="${zero?'#D9C7B2':'#F2E7DA'}" stroke-width="${zero?1.6:1}" ${zero?'':'stroke-dasharray="3 4"'}/>
+          <text x="${PL-8}" y="${y(v)+4}" font-size="${isNarrow?9.5:10.5}" fill="#B0A090" text-anchor="end">${fmtAxis(v)}</text>`;
+  }
+  // 縦ラベル
+  XLAB.forEach((lb,i)=>{
+    g += `<line x1="${x(i)}" y1="${PT}" x2="${x(i)}" y2="${H-PB}" stroke="#F6EEE4" stroke-width="1"/>
+          <text x="${x(i)}" y="${H-PB+20}" font-size="${isNarrow?10:11.5}" fill="#8A7A6B" text-anchor="middle" font-weight="700">${lb}</text>`;
+  });
+
+  // 線（基準＝いちばん下、選択中＝いちばん上）
+  const order = D.paths.slice().sort((a,b)=>
+    (a.base?0:a.id===curPath?2:1) - (b.base?0:b.id===curPath?2:1));
+  order.forEach(p=>{
+    const on = !p.base && p.id===curPath;
+    const vs = data[p.id];
+    const pts = vs.map((v,i)=>`${x(i)},${y(v)}`).join(' ');
+    g += `<polyline points="${pts}" fill="none" stroke="${LINECOL[p.id]}"
+            stroke-width="${on?4:p.base?2:2.2}" stroke-linecap="round" stroke-linejoin="round"
+            ${p.base?'stroke-dasharray="6 5"':''}
+            opacity="${on?1:p.base?.75:.42}"/>`;
+    if(!p.base) vs.forEach((v,i)=>{
+      g += `<circle cx="${x(i)}" cy="${y(v)}" r="${on?5:3.2}" fill="#fff"
+              stroke="${LINECOL[p.id]}" stroke-width="${on?3:2}" opacity="${on?1:.5}"/>`;
+    });
+    // 右端ラベル
+    const last = vs[3];
+    g += `<text x="${W-PR+11}" y="${y(last)+4}" font-size="${isNarrow?10:11.5}"
+            fill="${LINECOL[p.id]}" font-weight="800" opacity="${on?1:p.base?.85:.55}">${m.fmt(last)}</text>`;
+  });
+
+  box.innerHTML = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="display:block">${g}</svg>`;
+
+  document.getElementById('legend').innerHTML = D.paths.map(p=> p.base
+    ? `<span class="lg base"><i style="background:${LINECOL[p.id]}"></i>今のまま（基準）</span>`
+    : `<button class="lg ${p.id===curPath?'on':''}" onclick="selPath('${p.id}')">
+         <i style="background:${LINECOL[p.id]}"></i>${p.nm}
+       </button>`).join('');
+
+  const c = conds(), def = (c.save===BASE_C.save && c.prep===BASE_C.prep && c.hour===BASE_C.hour && c.move===BASE_C.move);
+  document.getElementById('chartNote').innerHTML = def
+    ? '💡 ' + D.chartNote[curMetric]
+    : '🔄 <b>あなたが変えた条件</b>で引き直しています（貯金'+c.save+'万・準備'+c.prep+'か月・週'+c.hour+'時間・引っ越し'+(c.move?'可':'不可')+'）。'
+      + '<span style="color:var(--muted)">灰色の点線（今のまま）がほとんど動かないのは、何も変えない道だからです。</span>';
+}
+
+function niceStep(raw){
+  const p = Math.pow(10, Math.floor(Math.log10(raw)));
+  const n = raw/p;
+  return (n<=1?1:n<=1.5?1.5:n<=2?2:n<=2.5?2.5:n<=3?3:n<=4?4:n<=5?5:10)*p;
+}
+function fmtAxis(v){ return v; }
+
+document.getElementById('metricTabs').addEventListener('click', e=>{
+  const b = e.target.closest('button'); if(!b) return;
+  document.querySelectorAll('#metricTabs button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); curMetric = b.dataset.m; renderChart();
+});
+
+let rz; window.addEventListener('resize', ()=>{ clearTimeout(rz); rz=setTimeout(()=>{ renderChart(); movePointer(); },150); });
+
+/* ============================================================
+   サイドナビ（ジャンプ＋スクロール追従）
+   ============================================================ */
+function goSec(id){
+  document.getElementById(id).scrollIntoView({behavior:'smooth', block:'start'});
+}
+document.getElementById('sidenav').addEventListener('click', e=>{
+  const b = e.target.closest('.navitem'); if(!b) return;
+  goSec(b.dataset.go);
+});
+window.addEventListener('scroll', ()=>{
+  if(!document.getElementById('s-result').classList.contains('on')) return;
+  const secs = ['r1','r2','r3','r4','r5'];
+  let cur = 'r1';
+  secs.forEach(id=>{
+    const el = document.getElementById(id);
+    if(el && el.getBoundingClientRect().top <= 160) cur = id;
+  });
+  document.querySelectorAll('.navitem').forEach(n=>n.classList.toggle('on', n.dataset.go===cur));
+}, {passive:true});
+
+/* ============================================================
+   条件変更
+   ============================================================ */
+let moveOK = 1;
+document.getElementById('tMove').addEventListener('click', e=>{
+  const b = e.target.closest('button'); if(!b) return;
+  document.querySelectorAll('#tMove button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); moveOK = +b.dataset.v; onCond();
+});
+['tSave','tPrep','tHour'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', onCond);
+});
+document.getElementById('tReset').addEventListener('click', ()=>{
+  document.getElementById('tSave').value = BASE_C.save;
+  document.getElementById('tPrep').value = BASE_C.prep;
+  document.getElementById('tHour').value = BASE_C.hour;
+  moveOK = 1;
+  document.querySelectorAll('#tMove button').forEach(x=>x.classList.toggle('on', x.dataset.v==='1'));
+  onCond();
+});
+
+/* 条件が変わったら、確率もグラフも一緒に引き直す */
+function onCond(){ tune(); markTuneSel(); renderChart(); }
+
+/* 道ごとに、条件の効き方がちがう
+   b=下地  s=貯金  p=準備期間  h=週の時間  m=引っ越し */
+const TUNE = {
+  stay  :{b:88, s:2,  p:0,  h:0,  m:0},
+  employ:{b:46, s:8,  p:14, h:16, m:14},
+  now   :{b:0,  s:28, p:22, h:12, m:12},
+  step  :{b:16, s:18, p:34, h:18, m:12}
+};
+let tuneBest = 'step';
+
+function tune(){
+  if(!D) return;
+  const c = conds();
+  const {save, prep, hour} = c;
+
+  document.getElementById('tSaveV').textContent = save>=2000 ? '2,000万円以上' : save.toLocaleString()+'万円';
+  document.getElementById('tPrepV').textContent = prep===0 ? 'すぐ動く' : prep+'か月';
+  document.getElementById('tHourV').textContent = hour+'時間';
+
+  // 進む道をまとめて再計算する（1本だけ見ても「どれを選ぶか」は判断できないため）
+  const rows = D.paths.filter(p=>!p.base).map(p=>{
+    const rate = Math.round(rateOf(p.id, c));
+    const dream = seriesOf('dream', p.id)[3];
+    return {p, rate, dream, score: rate*0.45 + dream*0.55};
+  });
+  const best = rows.reduce((a,b)=> b.score>a.score ? b : a);
+  const changed = best.p.id !== 'step';
+
+  document.getElementById('tuneBars').innerHTML = rows.map(r=>`
+    <div class="trow ${r.p.id===curPath?'sel':''}" data-p="${r.p.id}" style="--glow:${GLOWCOL[r.p.id]}">
+      <div>
+        <div class="tn"><i style="background:${LINECOL[r.p.id]}"></i>${r.p.nm}
+          ${r.p.id===best.p.id?'<span class="star">⭐️ おすすめ</span>':''}</div>
+        <div class="tb"><i style="width:${r.rate}%;background:${LINECOL[r.p.id]}"></i></div>
+      </div>
+      <div class="tv">${r.rate}<span style="font-size:10px">%</span></div>
+    </div>`).join('');
+
+  document.getElementById('tuneBest').innerHTML = changed
+    ? `条件が変わったので、おすすめは <b>${best.p.nm}</b> になりました。<br>
+       <span style="color:var(--muted);font-size:11.5px">最初のおすすめ「D」に戻すには、準備期間か貯金を増やしてみてください。</span>`
+    : `この条件でのおすすめは <b>${best.p.nm}</b> のままです。`;
+  tuneBest = best.p.id;
+
+  let note = '';
+  if(prep < 6)  note = '⚠️ 準備期間を短くすると、Bだけでなく Cの確率も大きく下がります。「知らないまま始める」がいちばん効きます。';
+  else if(!moveOK && D===DATA.strawberry) note = '💡 引っ越しなしだと選べる産地が減るため、3つとも下がります。「週末だけ通う」も選択肢です。';
+  else if(hour < 5) note = '💡 週に使える時間が5時間を切ると、準備そのものが進みません。まずここを作るところからです。';
+  else if(save >= 1500) note = '💡 お金を増やしてもBの確率はあまり伸びません。足りないのはお金ではなく経験だからです。';
+  else note = '💡 灰色の点線が「今のまま」です。どの道もこの線と比べて意味があるかで判断してください。';
+  document.getElementById('oNote').textContent = note;
+}
+
+/* 選択中の道だけ印をつける（数値そのものは選択に依存させない） */
+function markTuneSel(){
+  document.querySelectorAll('#tuneBars .trow').forEach(el=>{
+    el.classList.toggle('sel', el.dataset.p===curPath);
+  });
+}
+
+function restart(){
+  curPath='step'; curYear='y1'; curMetric='income';
+  document.querySelectorAll('#metricTabs button').forEach((x,i)=>x.classList.toggle('on', i===0));
+  document.getElementById('themeInput').value='';
+  document.querySelectorAll('#yearTabs button').forEach((x,i)=>x.classList.toggle('on', i===0));
+  show('s-theme');
+}
+</script>
 </body>
 </html>

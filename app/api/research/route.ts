@@ -1,18 +1,33 @@
 import { NextResponse } from "next/server";
 import { researchRequestSchema } from "@/types/research";
-import { buildResearchPrompt } from "@/lib/PromptBuilder";
-import { requestResearchCompletion } from "@/lib/OrcaRouterClient";
+import { buildFactFindingPrompt, buildResearchPrompt } from "@/lib/PromptBuilder";
+import {
+  isFactFindingConfigured,
+  requestFactFindingCompletion,
+  requestResearchCompletion,
+} from "@/lib/OrcaRouterClient";
 import { validateResearchResult } from "@/lib/ResultValidator";
+import { validateFactFindingResponse } from "@/lib/FactFindingValidator";
+import type { FactFindingResponse } from "@/types/factFinding";
 import { ResearchError, toErrorResponse } from "@/lib/errors";
 import { requireAuthorizedUser } from "@/lib/apiGuard";
 
 export const runtime = "nodejs";
+// Pass1(基礎調査) + Pass2(詳細生成、リトライ含む) の合計で90秒前後かかりうるため長めに確保する。
+// Vercel Hobbyプランは通常60秒上限だが、Fluid Compute有効時は300秒まで設定できる。
+export const maxDuration = 120;
 
 /**
  * POST /api/research
  * 設計書 7章・8.2章に対応する ResearchController。
  * 未認証は401、ホワイトリスト対象外は403、Rate Limit超過は429を返す（設計書14.1章・14.2章）。
- * ユーザー入力を検証し、PromptBuilder → OrcaRouterClient → ResultValidator の順で処理する。
+ *
+ * Pass1 (基礎調査・Web Search対応モデル) → Pass2 (詳細生成・通常モデル) の2段階構成。
+ * search系モデルは出力トークンが実測1,000〜1,500程度に制限されており、3道比較を含む
+ * 大きな ResearchResult を直接生成させると出力が途中で切れる (2026-08-12 実測)。
+ * そのため Web Search は軽量な基礎調査のみで使い、その結果を詳細生成のプロンプトに
+ * 埋め込むことで、情報量の多い新UIと最新情報の反映を両立する。
+ * 基礎調査はベストエフォートとし、失敗・未設定でも詳細生成は続行する。
  */
 export async function POST(request: Request) {
   try {
@@ -31,7 +46,9 @@ export async function POST(request: Request) {
       throw new ResearchError("invalid_request", `入力内容が不正です: ${issues}`);
     }
 
-    const prompt = await buildResearchPrompt(parsed.data);
+    const factFinding = await runFactFindingBestEffort(parsed.data);
+
+    const prompt = await buildResearchPrompt(parsed.data, factFinding);
 
     const rawFirst = await requestResearchCompletion(prompt);
     const firstValidation = validateResearchResult(rawFirst);
@@ -58,5 +75,25 @@ export async function POST(request: Request) {
     );
   } catch (err) {
     return toErrorResponse(err);
+  }
+}
+
+/**
+ * Pass1（基礎調査）をベストエフォートで実行する。
+ * ORCAROUTER_FACT_MODEL 未設定、タイムアウト、検証失敗など、いかなる理由でも
+ * 例外を外へ投げず、詳細生成 (Pass2) は facts なしで続行できるようにする。
+ */
+async function runFactFindingBestEffort(
+  request: Parameters<typeof buildFactFindingPrompt>[0],
+): Promise<FactFindingResponse | undefined> {
+  if (!isFactFindingConfigured()) return undefined;
+
+  try {
+    const prompt = await buildFactFindingPrompt(request);
+    const raw = await requestFactFindingCompletion(prompt);
+    const validation = validateFactFindingResponse(raw);
+    return validation.ok ? validation.data : undefined;
+  } catch {
+    return undefined;
   }
 }

@@ -1,13 +1,13 @@
 # LifeFork
 
 転職・独立を「ふと思いついたが、まだ本格的に調べていない人」向けの初期リサーチプロトタイプです。
-プロフィール・希望する将来像・AIが生成する追加ヒアリングへの回答を入力すると、「今の道を続けた未来」と「その道に進んだ未来」を
+プロフィール・希望する将来像・AIが生成する追加ヒアリングへの回答を入力すると、「今のまま」と「そこから進める3つの道」を
 **将来性 / 年収 / 実現手段 / リスク** の同じ軸で比較し、Web画面に表示します。
 
-設計書: `LifeFork_システム基本設計_v0.4`（ハッカソンGit提出用プロトタイプ）に基づく実装です。
+設計書: `LifeFork_システム基本設計_v0.4`（ハッカソンGit提出用プロトタイプ）＋ UI案（`lifefork_demo.html`, 2026-08-12）に基づく実装です。
 
 > 本システムはハッカソン向けMVPです。出力の再現性・精度は保証しません。
-> 発表用に人手で検証したサンプルは [`demo/champion.html`](./demo/champion.html) を参照してください（Liveシステムとは分離した別成果物です）。
+> 発表用に人手で検証したサンプルは [`demo/champion.html`](./demo/champion.html) を参照してください（UI案そのものを採用、Liveシステムとは分離した別成果物です）。
 
 ## 画面フロー
 
@@ -21,8 +21,8 @@ S01 入力 → S02 ヒアリング(AI動的生成) → S03 リサーチ中 → S
 0. **ログイン** — `/`〜`/result` はログイン必須です。未認証の場合 `/login` へ誘導され、Googleアカウントでログインします。事前登録（`ALLOWED_EMAILS`）されたメールアドレス以外は利用できません。
 1. **S01 入力** — プロフィール（職種・経験年数・現在の年収など）と、検討したい将来像（転職 or 独立）を入力します。
 2. **S02 ヒアリング** — `POST /api/interview` を呼び出し、S01の入力をもとにOrcaRouterが最大4問の追加質問を**1回だけ**生成します。回答ごとの逐次質問生成（多段ヒアリング）は行いません。
-3. **S03 リサーチ中** — `POST /api/research` を呼び出し、OrcaRouter経由でリサーチ結果を取得します。
-4. **S04 比較結果** — 「今の道」と「検討している道」を並べて表示します。取得・検証に失敗した場合は結果を捏造せずエラーを表示します。
+3. **S03 リサーチ中** — `POST /api/research` を呼び出し、OrcaRouter経由でリサーチ結果を取得します（内部では基礎調査→詳細生成の2段階、後述）。
+4. **S04 比較結果** — 「今のまま」と、そこから進める3つの道（A/B/C、UI案準拠）を比較表示します。カード選択・年次シーン・条件シミュレーション（貯金/準備期間/週の時間/引っ越し可否をスライダーで動かすとグラフと確率が再計算されるUI）を含みます。取得・検証に失敗した場合は結果を捏造せずエラーを表示します。
 
 ## セットアップ
 
@@ -83,18 +83,26 @@ curl http://localhost:3000/api/health
 | --- | --- | --- |
 | `ORCAROUTER_API_KEY` | ✅ | OrcaRouterのAPIキー。サーバー側でのみ使用し、ブラウザへは渡しません。 |
 | `ORCAROUTER_BASE_URL` | - | OrcaRouterのBase URL。未設定時は `https://api.orcarouter.ai/v1`。 |
-| `ORCAROUTER_MODEL` | - | 使用するモデル/ルーターID。未設定時は `orcarouter/auto`。`openai/gpt-4o-mini-search-preview` は実検索(`url_citation`)の発火と`response_format`併用を確認済みです。 |
-| `ORCAROUTER_TIMEOUT_MS` | - | OrcaRouter呼び出しのタイムアウト（ミリ秒）。未設定時は `55000`。 |
-| `ORCAROUTER_WEB_SEARCH` | - | `true` にすると `POST /api/research`（ヒアリング生成では不要なため付与しません）に `web_search_options` を付与しWeb Searchを有効化します。未設定時は `false`。 |
+| `ORCAROUTER_MODEL` | - | 詳細生成 (Pass2) に使うモデル/ルーターID。未設定時は `orcarouter/auto`。`openai/gpt-4o-mini` で動作確認済み。 |
+| `ORCAROUTER_FACT_MODEL` | - | 基礎調査 (Pass1) に使うWeb Search対応モデル。未設定時は基礎調査自体をスキップします。`openai/gpt-4o-mini-search-preview` は実検索(`url_citation`)の発火を確認済み。 |
+| `ORCAROUTER_TIMEOUT_MS` | - | Pass2（詳細生成）呼び出しのタイムアウト（ミリ秒）。未設定時は `45000`。 |
+| `ORCAROUTER_FACT_TIMEOUT_MS` | - | Pass1（基礎調査）呼び出しのタイムアウト（ミリ秒）。未設定時は `15000`。 |
+| `ORCAROUTER_WEB_SEARCH` | - | `true` にするとPass1（基礎調査）に `web_search_options` を付与しWeb Searchを有効化します。未設定時は `false`。 |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | ✅ | Google Cloud ConsoleでのOAuthクライアント情報。 |
 | `AUTH_SECRET` | ✅ | Auth.jsのセッション署名用シークレット。 |
 | `ALLOWED_EMAILS` | ✅ | ログインを許可するGoogleアカウントのメールアドレス（カンマ区切り、サーバー側のみ参照）。 |
 | `RATE_LIMIT_PER_MINUTE` | - | ユーザー単位Rate Limitの上限（回/分）。未設定時は `10`。 |
 
-### Web Search対応モデルについて（設計書9.5章）
+### リサーチ生成のTwo-passアーキテクチャ（設計書9.5章 + UI案対応）
 
-`/api/pricing`（認証不要）でOrcaRouterの全モデルの価格・対応パラメータを確認できます。`supported_parameters` に `web_search_options` を含むモデルが実検索候補です（2026-08-12時点で確認できたのは `openai/gpt-4o-search-preview` 系・`openai/gpt-5-search-api` 系）。
-このうち `openai/gpt-4o-mini-search-preview` は、`response_format: json_schema` と `web_search_options` を併用してもJSON構造を維持しつつ実URLを含む回答を返すことを確認済みです。価格・提供状況は変動するため、切り替え前に同様の疎通確認を行ってください。
+UI案の「今のまま＋3つの道」比較・年次推移・条件シミュレーションを1回のAIレスポンスで生成すると、`ResearchResult` は約4,700〜6,500トークン相当の大きなJSONになります。ところが2026-08-12時点で実測したところ、Web Search対応の `-search-preview` 系・`gpt-5-search-api` 系モデルは `max_completion_tokens` を明示指定しても**出力が1,000〜1,500トークン程度で強制的に打ち切られ**、大きなJSONを最後まで生成できないことが分かりました。
+
+そのため `POST /api/research` は内部で2段階の呼び出しを行います（[`app/api/research/route.ts`](./app/api/research/route.ts)）。
+
+1. **Pass1（基礎調査）**: `ORCAROUTER_FACT_MODEL`（Web Search対応）で、関連する事実・相場・参考URLを最大8件の簡潔な箇条書きとして取得します（[`prompts/research_facts.md`](./prompts/research_facts.md)）。ベストエフォートで、未設定・失敗時は空のまま次に進みます。
+2. **Pass2（詳細生成）**: Pass1の結果を [`lib/PromptBuilder.ts`](./lib/PromptBuilder.ts) 経由でプロンプトに埋め込み、`ORCAROUTER_MODEL`（Web Searchなしの通常モデル）で `ResearchResult` 全体を生成します。出力トークン上限の制約を受けないため、情報量の多いJSONも最後まで生成できます。
+
+実測（`gpt-4o-mini-search-preview` + `gpt-4o-mini`）: Pass1 約7〜9秒、Pass2 約50〜65秒、合計1分前後。`app/api/research/route.ts` は `maxDuration = 120` を設定しています（VercelはHobbyプランでも Fluid Compute 有効時は最大300秒まで設定可能）。
 
 ## 認証・認可・API乱用防止（設計書v0.4 14章）
 
@@ -121,10 +129,11 @@ curl http://localhost:3000/api/health
 
 ユーザー入力（プロフィール・将来像・ヒアリング回答）を受け取り、比較結果（`ResearchResult`）を返します。ログイン必須。
 
-- リクエスト/レスポンスの意味構造は [`types/research.ts`](./types/research.ts) を参照してください。
+- リクエスト/レスポンスの意味構造は [`types/research.ts`](./types/research.ts) を参照してください。`currentPath`（今のまま）と `targetPaths`（進める道、必ず3件）、各パスの年次シーン（`yearlyScenes.y1/y3/y5`）・グラフ用数値系列（`series`）・条件シミュレーション係数（`tuneFactors`）・チェックリスト（`checks`）・「いま向いてる度」（`summary.fitScore`）を含みます。
 - ステータスコード: `200`(正常) / `400`(入力不正) / `401`(未認証) / `403`(ホワイトリスト対象外) / `429`(アプリRate Limit超過 or OrcaRouterレート制限) / `502`(上流エラー・応答検証失敗) / `504`(タイムアウト) / `500`(その他)
-- AIの応答はプロンプト（`prompts/research_system.md`）に基づき構造化JSON（`ResearchResult`）で取得し、`lib/ResultValidator.ts` で zod スキーマ検証します。検証に失敗した場合は1回のみフォーマット修正を促して再試行し、それでも失敗すればエラーとして結果を返します（結果を捏造しません）。
+- 内部は基礎調査(Pass1)→詳細生成(Pass2)の2段階（上記「Two-passアーキテクチャ」参照）。詳細生成の応答はプロンプト（`prompts/research_system.md`）に基づき構造化JSON（`ResearchResult`）で取得し、`lib/ResultValidator.ts` で zod スキーマ検証します。検証に失敗した場合は1回のみフォーマット修正を促して再試行し、それでも失敗すればエラーとして結果を返します（結果を捏造しません）。
 - ヒアリング質問はDBに保存しないため、動的生成された質問文はクライアントが `answers[].question` として再送します。
+- 「いま向いてる度」等の数値スコアは、設計書10章が定める「根拠の弱い疑似精密スコアは持たせない」という方針の例外です。UI案の要求により、目安であることを明記した上でユーザー判断により追加しています。
 
 ### `GET /api/health`
 
@@ -134,25 +143,32 @@ curl http://localhost:3000/api/health
 
 ```
 app/
-  page.tsx                    # S01 入力
-  interview/page.tsx          # S02 ヒアリング (AI動的生成・回答)
-  researching/page.tsx        # S03 リサーチ中
+  page.tsx                    # S01 入力 (テーマ入力+プロフィール、UI案デザイン)
+  interview/page.tsx          # S02 ヒアリング (AI動的生成・1問ずつ回答、UI案デザイン)
+  researching/page.tsx        # S03 リサーチ中 (ログ演出、UI案デザイン)
   result/page.tsx             # S04 比較結果
-  login/page.tsx               # ログイン画面
+  login/page.tsx               # ログイン画面 (UI案ランディングを流用)
   api/auth/[...nextauth]/route.ts  # Auth.js ハンドラ
   api/interview/route.ts      # POST /api/interview (InterviewController)
-  api/research/route.ts       # POST /api/research (ResearchController)
+  api/research/route.ts       # POST /api/research (ResearchController, Two-pass)
   api/health/route.ts         # GET /api/health
 auth.ts                       # Auth.js設定 (Google OIDC + ホワイトリスト判定)
 proxy.ts                      # 画面のログイン必須化 (Next.js 16 Proxy、旧Middleware)
 components/
-  Header.tsx                  # ログイン中のみ表示する共通ヘッダー
-  result/                     # 比較結果表示コンポーネント
+  Header.tsx                  # ログイン中のみ表示する共通ヘッダー (UI案 topbar)
+  result/
+    ResultView.tsx             # S04 全体の状態管理・レイアウト（サイドナビ/こたえ/checks）
+    PathsSection.tsx            # 3道カード選択 + 統合パネル（年次シーン）
+    TunerSection.tsx            # 条件シミュレーション（スライダー + グラフ + 確率バー）
+    TrendChart.tsx               # SVG折れ線グラフ描画
+    ActionSection.tsx           # はじめの一歩・プラン・handoff(モック)・paywall(モック)
 lib/
-  OrcaRouterClient.ts          # OrcaRouter (OpenAI互換API) 呼び出し (interview/research 共通)
-  PromptBuilder.ts             # システムプロンプト + ユーザー入力の組み立て
+  OrcaRouterClient.ts          # OrcaRouter (OpenAI互換API) 呼び出し (interview/research Pass1・Pass2共通)
+  PromptBuilder.ts             # システムプロンプト + ユーザー入力の組み立て (Pass1/Pass2)
   InterviewValidator.ts        # InterviewResponse のスキーマ検証
   ResultValidator.ts           # ResearchResult のスキーマ検証
+  FactFindingValidator.ts      # Pass1 (基礎調査) レスポンスのスキーマ検証
+  tuneMath.ts                  # 条件シミュレーションの近似再計算ロジック
   allowedEmails.ts             # ALLOWED_EMAILS ホワイトリスト判定
   apiGuard.ts                  # API向け 認証・認可・Rate Limit ガード
   rateLimit.ts                 # ユーザー単位 Rate Limit (Fixed Window)
@@ -160,11 +176,13 @@ lib/
   errors.ts                    # アプリケーションエラー定義
 prompts/
   interview_system.md          # ヒアリング質問生成プロンプト（外部ファイル管理）
-  research_system.md           # リサーチ用システムプロンプト（外部ファイル管理）
+  research_system.md           # 詳細生成 (Pass2) 用システムプロンプト（外部ファイル管理）
+  research_facts.md            # 基礎調査 (Pass1) 用システムプロンプト（外部ファイル管理）
 types/
   interview.ts                  # InterviewQuestion等のドメイン型
   research.ts                   # ResearchResult等のドメイン型 (zodスキーマが単一の情報源)
-demo/champion.html            # 発表用チャンピオンデータのサンプル（Liveシステムと分離）
+  factFinding.ts                # Pass1 (基礎調査) レスポンスの型
+demo/champion.html            # 発表用チャンピオンデータ（UI案 lifefork_demo.html を採用、Liveシステムと分離）
 ```
 
 ## データの扱い
@@ -185,13 +203,18 @@ demo/champion.html            # 発表用チャンピオンデータのサンプ
    | --- | --- |
    | `ORCAROUTER_API_KEY` | `<secret>`（Sensitive） |
    | `ORCAROUTER_BASE_URL` | `https://api.orcarouter.ai/v1` |
-   | `ORCAROUTER_MODEL` | `openai/gpt-4o-mini-search-preview` など疎通確認済みのモデルID |
-   | `ORCAROUTER_WEB_SEARCH` | `true`（Web Search対応モデルを使う場合） |
+   | `ORCAROUTER_MODEL` | `openai/gpt-4o-mini` など、詳細生成(Pass2)の出力量に耐えられる通常モデル |
+   | `ORCAROUTER_FACT_MODEL` | `openai/gpt-4o-mini-search-preview` など疎通確認済みのWeb Search対応モデル |
+   | `ORCAROUTER_TIMEOUT_MS` | `80000` |
+   | `ORCAROUTER_FACT_TIMEOUT_MS` | `15000` |
+   | `ORCAROUTER_WEB_SEARCH` | `true`（`ORCAROUTER_FACT_MODEL` がWeb Search対応モデルの場合） |
    | `GOOGLE_CLIENT_ID` | `<google oauth client id>` |
    | `GOOGLE_CLIENT_SECRET` | `<secret>`（Sensitive） |
    | `AUTH_SECRET` | `<secret>`（Sensitive） |
    | `ALLOWED_EMAILS` | `user1@gmail.com,user2@gmail.com` |
    | `RATE_LIMIT_PER_MINUTE` | `10` |
+
+   `POST /api/research` は `maxDuration = 120` を設定しています。Vercel Hobbyプランは通常60秒上限ですが、Fluid Compute有効時は300秒まで動作します。
 
 5. Production Deployment の公開URL（`https://<project>.vercel.app`）が審査・デモ用URLになる。公開URL自体はインターネットから到達可能だが、利用には`ALLOWED_EMAILS`登録済みのGoogleアカウントでのログインが必須（設計書20.2章）。
 6. Live API障害時にチャンピオンデータへ自動フォールバックする処理は実装しない（設計書20.6章）。発表用チャンピオンHTML（`demo/champion.html`）はLive APIの成否に依存しない別成果物として使用する。
@@ -203,7 +226,10 @@ demo/champion.html            # 発表用チャンピオンデータのサンプ
 - ワイヤーフレーム・最終的なUIデザインは未確定です。本実装は画面の「目的」を満たす簡易UIです。
 - プロフィールの最終入力項目は暫定です。
 - `prompts/interview_system.md` / `prompts/research_system.md` の文面は暫定です。実運用前に内容を見直してください。
-- OrcaRouterで使用する最終モデル/ルーターは、Web Searchの実発火を確認したうえで `ORCAROUTER_MODEL` に設定してください。
-- `demo/champion.html` は開発時に作成したサンプルです。発表用の最終版は改めて作成してください。
+- OrcaRouterで使用する最終モデル/ルーターは、Web Searchの実発火を確認したうえで `ORCAROUTER_FACT_MODEL` に設定してください。
+- `demo/champion.html` はUI案(`lifefork_demo.html`)をそのまま採用しています。発表用の最終版として利用する場合は内容を再確認してください。
 - ユーザー単位Rate Limitはメモリ内実装のベストエフォートです（上記「認証・認可・API乱用防止」参照）。
+- 条件シミュレーション（貯金/準備期間/週の時間/引っ越し可否のスライダー）は、AIが生成した `tuneFactors`（目安の感度）を使ったクライアント側の近似計算です。条件を変えるたびにAIを再呼び出しするわけではありません。
+- 「いま向いてる度」「うまくいく確率」等の数値は目安の推定であり、厳密な計算に基づくものではありません。
+- ペイウォール（月1回無料・追加300円）と外部ハンドオフ（相談窓口・求人サービス等）はUI案に合わせた見た目のみのモックです。決済処理・外部サービス連携は実装していません。
 - DB/履歴/決済/管理画面/ロール権限管理/複雑なエージェントループ/回答ごとの逐次ヒアリング生成は実装対象外です。
