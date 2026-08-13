@@ -186,6 +186,8 @@ export function TunerSection({
                 ? note
                 : `🔄 あなたが変えた条件で引き直しています（貯金${conditions.savings}万・準備${conditions.prepMonths}か月・週${conditions.weeklyHours}時間・引っ越し${conditions.relocation ? "可" : "不可"}）。`}
             </p>
+            {/* いま選んでいる道のグラフ数値の根拠（path.detail等と同じ出典を再掲、UI案 chartSrc 相当）。 */}
+            <Cites indexes={curPath.sourceIndex} sources={result.sources} />
           </div>
         </div>
 

@@ -13,6 +13,8 @@
      ページ単位ルーティングのため不要（各 `.stage` は常時表示でよい）。
    - body の flex レイアウト、`.topbar .who button`（ログアウトリンク）、
      `.btn.auto`（幅自動の汎用ボタン）は元のUI案に無い、本実装側の追加。
+   - ヒーローイラスト (public/hero-art.webp) はUI案のbase64埋め込み画像を
+     デコードして静的アセット化したもの（見た目は同一、埋め込み方式のみ変更）。
    ============================================================ */
 
 :root{
@@ -125,14 +127,14 @@ p{margin:0}
 .pill.y{background:var(--sun-lt);color:#9A6D06}
 
 /* ============ ランディング ============ */
-.hero{position:relative;width:min(100%,1160px);margin:0 auto;padding:34px 0 0}
+.hero{position:relative;width:min(100%,1160px);margin:0 auto;padding:34px 0 0;overflow:hidden}
 
 /* イラストは背景として配置する */
 .hero-art{
-  position:relative;z-index:0;pointer-events:none;line-height:0;
-  display:flex;justify-content:center;margin:6px 0 4px;opacity:.9;
+  position:absolute;z-index:0;pointer-events:none;line-height:0;
+  right:-14%;bottom:-4%;width:128%;opacity:.42;
 }
-.hero-art svg{width:300px;height:auto}
+.hero-art img{display:block;width:100%;height:auto}
 
 .hero-copy{position:relative;z-index:1;text-align:left;max-width:600px}
 .hero-kicker{
@@ -522,7 +524,7 @@ a.cite:after{content:"↗";font-size:8.5px;opacity:.7}
   .usecases{gap:8px;margin-top:24px}
   .usecases span{font-size:12.5px;padding:7px 14px}
   .hero-cta{margin-top:28px}
-  .hero-art svg{width:340px;height:auto}
+  .hero-art{right:-3%;bottom:auto;top:50%;transform:translateY(-48%);width:min(50%,620px);opacity:.92}
   h1{font-size:38px}
   .facts{grid-template-columns:repeat(4,1fr)}
 

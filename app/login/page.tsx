@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { signIn } from "@/auth";
 
 /**
@@ -78,48 +79,9 @@ export default async function LoginPage({
           </div>
         </div>
 
-        {/* UI案は装飾イラストをbase64画像で埋め込んでいるが、リポジトリ肥大化を避け
-            既存のインラインSVGを流用する（情報構造への影響はない見た目のみの差分）。 */}
+        {/* UI案のイラストをそのまま採用（人生の分岐点に立つ人物）。 */}
         <div className="hero-art">
-          <svg width="300" height="270" viewBox="0 0 300 270">
-            <ellipse cx="150" cy="252" rx="120" ry="12" fill="#E4EBF7" />
-            <path
-              d="M150 250 C150 210 148 190 140 168 C132 146 118 130 96 116 C74 102 56 92 44 78"
-              stroke="#C7D5EC"
-              strokeWidth="15"
-              fill="none"
-              strokeLinecap="round"
-              strokeDasharray="1 26"
-            />
-            <path
-              d="M150 250 C150 210 152 190 162 168 C174 142 194 126 218 112 C240 99 254 88 264 74"
-              stroke="#FFB877"
-              strokeWidth="15"
-              fill="none"
-              strokeLinecap="round"
-              strokeDasharray="1 26"
-            />
-            <circle cx="150" cy="228" r="13" fill="#2E6BD6" />
-            <path d="M150 240 L150 250" stroke="#2E6BD6" strokeWidth="8" strokeLinecap="round" />
-            <g>
-              <rect x="14" y="34" width="60" height="46" rx="14" fill="#fff" stroke="#D3DBE9" strokeWidth="2" />
-              <text x="44" y="64" fontSize="22" textAnchor="middle">
-                🏢
-              </text>
-            </g>
-            <g>
-              <rect x="228" y="26" width="62" height="48" rx="14" fill="#FFF0E3" stroke="#FFB877" strokeWidth="2.5" />
-              <text x="259" y="57" fontSize="22" textAnchor="middle">
-                🍓
-              </text>
-            </g>
-            <text x="44" y="102" fontSize="11" textAnchor="middle" fill="#7C8AA4">
-              今のまま
-            </text>
-            <text x="259" y="96" fontSize="11" textAnchor="middle" fill="#E8600F" fontWeight="bold">
-              進んだ未来
-            </text>
-          </svg>
+          <Image src="/hero-art.webp" alt="" width={1000} height={464} priority />
         </div>
       </div>
     </main>
