@@ -190,6 +190,16 @@ p{margin:0}
 }
 .field input[type=text]:focus,.field select:focus,.field textarea:focus{border-color:var(--pri)}
 .field textarea{resize:vertical;min-height:88px;line-height:1.7}
+/* 自由記述の質問に添えるタップ入力候補（UI案には無いが、想定される回答を
+   タップで埋められるようにする単純増加の追加。UI案のsingle_selectとは異なり
+   排他選択ではなく、入力欄への下書きとして機能する）。 */
+.qsuggest{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.qsuggest button{
+  font-size:13px;font-weight:700;color:var(--ink-2);background:#fff;
+  border:1.5px solid var(--line-2);border-radius:99px;padding:8px 14px;transition:.14s;
+}
+.qsuggest button:hover{border-color:var(--pri);background:#FAFCFF}
+.qsuggest button.on{border-color:var(--pri);background:var(--pri-lt);color:var(--pri-dk)}
 .seg{display:flex;gap:8px}
 .seg button{
   flex:1;padding:12px;border-radius:12px;border:1.5px solid var(--line-2);background:#fff;

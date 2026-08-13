@@ -235,6 +235,7 @@ export default function InterviewPage() {
             key={q.id}
             initial={values[q.id] ?? ""}
             required={q.required}
+            suggestions={q.options}
             onSubmit={(value) => answer(q.id, value)}
           />
         )}
@@ -256,10 +257,12 @@ export default function InterviewPage() {
 function TextAnswer({
   initial,
   required,
+  suggestions,
   onSubmit,
 }: {
   initial: string;
   required: boolean;
+  suggestions: string[];
   onSubmit: (value: string) => void;
 }) {
   const [text, setText] = useState(initial);
@@ -271,6 +274,15 @@ function TextAnswer({
 
   return (
     <div className="field">
+      {suggestions.length > 0 && (
+        <div className="qsuggest">
+          {suggestions.map((s) => (
+            <button key={s} type="button" className={text === s ? "on" : ""} onClick={() => setText(s)}>
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
       <input
         type="text"
         autoFocus
@@ -279,7 +291,7 @@ function TextAnswer({
         onKeyDown={(e) => {
           if (e.key === "Enter") submit();
         }}
-        placeholder="回答を入力"
+        placeholder={suggestions.length > 0 ? "候補をタップするか、自分の言葉で入力" : "回答を入力"}
       />
       <button className="btn" style={{ marginTop: 14 }} onClick={submit}>
         次へ

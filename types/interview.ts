@@ -21,6 +21,10 @@ export const interviewQuestionSchema = z
     // UI案の「なぜこれを聞くか」吹き出し用。設計書8.1章の型にはないが単純増加として追加。
     why: z.string().min(1),
     type: interviewQuestionTypeSchema,
+    // single_select: ユーザーはこの中から選ぶ（網羅的な選択肢）。
+    // text: 自由記述だが、想定される代表的な回答例をタップ入力の候補として表示する
+    //       （2026-08-13 追加。ユーザーは候補をタップして埋めるか自分の言葉で書き直せる）。
+    //       候補が思いつかない場合は空配列でよい。
     options: z.array(z.string()).default([]),
     required: z.boolean().default(false),
   })
