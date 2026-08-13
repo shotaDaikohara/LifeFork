@@ -27,6 +27,6 @@ Web検索を使って関連する事実・相場・制度情報を手短に集�
 ```json
 {
   "facts": ["string"],
-  "sources": [{ "title": "string", "url": "string", "usedFor": "string" }]
+  "sources": [{ "title": "string", "url": "string" }]
 }
 ```

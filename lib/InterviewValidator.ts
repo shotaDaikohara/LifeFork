@@ -1,4 +1,5 @@
 import { interviewResponseSchema, type InterviewResponse } from "@/types/interview";
+import { stripNullValues } from "@/lib/jsonNormalize";
 
 export type InterviewValidationResult =
   | { ok: true; data: InterviewResponse }
@@ -16,7 +17,7 @@ export function validateInterviewResponse(raw: string): InterviewValidationResul
     return { ok: false, message: "モデル出力がJSONとして解釈できませんでした。" };
   }
 
-  const result = interviewResponseSchema.safeParse(parsed);
+  const result = interviewResponseSchema.safeParse(stripNullValues(parsed));
   if (!result.success) {
     const issues = result.error.issues
       .slice(0, 5)

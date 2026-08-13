@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import type { Goal, ResearchResult, TargetPath } from "@/types/research";
 import { clearResultAndError } from "@/lib/researchSession";
+import { Cites, CiteIn } from "@/lib/citations";
 
 const HANDOFF_BY_GOAL: Record<Goal["type"], { icon: string; title: string; sub: string; bg: string }[]> = {
   career_change: [
@@ -34,8 +35,76 @@ export function ActionSection({
   return (
     <section className="rsec section" id="r4">
       <div className="sec-h">
-        <div className="no">4</div>
-        <h2>じゃあ、何から始めましょうか</h2>
+        <h2 style={{ fontSize: 17 }}>じゃあ、何から始めましょうか</h2>
+      </div>
+
+      {/* いまのあなた：どの道を選んでも同じ、出発点となる4つの目安と、
+          足りているもの・足りないもの（旧UI案では r1 にあったが、
+          比較の基準情報として r4 冒頭にまとめて置く構成に変更された）。 */}
+      <div className="card" style={{ marginBottom: 18 }}>
+        <div className="sec-h" style={{ marginBottom: 12 }}>
+          <h2 style={{ fontSize: 15 }}>いまのあなた</h2>
+          <div className="small">どの道を選んでも同じ、出発点です</div>
+        </div>
+        <div className="facts">
+          {[result.summary.fitScore, result.summary.availableFunds, result.summary.survivalPeriod, result.summary.relevantExperience].map(
+            (f, i) => (
+              <div className="fact" key={i}>
+                <div className="l">{f.label}</div>
+                <div className="v">
+                  {f.value}
+                  <small>{f.unit}</small>
+                </div>
+                {f.sourceIndex && (
+                  <div className="fsrc">
+                    <CiteIn index={f.sourceIndex} sources={result.sources} />
+                  </div>
+                )}
+              </div>
+            ),
+          )}
+        </div>
+        <div className="checks2" style={{ marginTop: 16 }}>
+          <div>
+            <div className="chead ok">✓ 足りているもの</div>
+            {result.checks
+              .filter((c) => c.status === "ok")
+              .map((c, i) => (
+                <div className="check" key={i}>
+                  <span className="st ok">✓</span>
+                  <div className="tx">
+                    {c.title}
+                    <small>
+                      {c.detail}
+                      {c.sourceIndex && <CiteIn index={c.sourceIndex} sources={result.sources} />}
+                    </small>
+                  </div>
+                </div>
+              ))}
+          </div>
+          <div>
+            <div className="chead ng">✕ 足りないもの</div>
+            {result.checks
+              .filter((c) => c.status === "ng")
+              .map((c, i) => (
+                <div className="check" key={i}>
+                  <span className="st ng">✕</span>
+                  <div className="tx">
+                    {c.title}
+                    <small>
+                      {c.detail}
+                      {c.sourceIndex && <CiteIn index={c.sourceIndex} sources={result.sources} />}
+                    </small>
+                  </div>
+                </div>
+              ))}
+          </div>
+        </div>
+        {result.limitations.length > 0 && (
+          <p className="tiny" style={{ margin: "14px 2px 0" }}>
+            {result.limitations.join(" / ")}
+          </p>
+        )}
       </div>
 
       <div className="actfor">
@@ -51,6 +120,7 @@ export function ActionSection({
         <div className="lb">まずはこれだけ</div>
         <div className="big">{curPath.firstStep.headline}</div>
         <div className="txt">{curPath.firstStep.body}</div>
+        <Cites indexes={curPath.sourceIndex} sources={result.sources} />
       </div>
 
       <div className="card" style={{ marginTop: 14 }}>
@@ -66,6 +136,7 @@ export function ActionSection({
             </div>
           ))}
         </div>
+        <Cites indexes={curPath.sourceIndex} sources={result.sources} />
       </div>
 
       <div style={{ marginTop: 22 }}>
@@ -99,22 +170,6 @@ export function ActionSection({
         </button>
         <p className="tiny" style={{ marginTop: 12 }}>来月1日になると、また無料で1回使えます</p>
       </div>
-
-      {result.sources.length > 0 && (
-        <div className="card" style={{ marginTop: 22 }}>
-          <h3 style={{ marginBottom: 10 }}>根拠・参考情報</h3>
-          <ul style={{ margin: 0, paddingLeft: 18, display: "grid", gap: 6 }}>
-            {result.sources.map((s, i) => (
-              <li key={i} className="small">
-                <a href={s.url} target="_blank" rel="noopener noreferrer" className="textlink" style={{ color: "var(--orange-dk)" }}>
-                  {s.title}
-                </a>
-                <span style={{ color: "var(--muted)" }}> — {s.usedFor}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
 
       <div style={{ textAlign: "center", marginTop: 26 }}>
         <button

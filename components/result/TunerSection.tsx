@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { ResearchResult, TargetPath, TrendSeries } from "@/types/research";
 import { TrendChart, type ChartLine } from "./TrendChart";
 import { DEFAULT_CONDITIONS, isDefaultConditions, rateOf, seriesOf, type Conditions } from "@/lib/tuneMath";
+import { Cites } from "@/lib/citations";
 
 const METRICS: { key: keyof TrendSeries; label: string; icon: string; unit: string; toDisplay: (v: number) => number }[] = [
   { key: "income", label: "年収", icon: "💰", unit: "万円", toDisplay: (v) => Math.round(v / 10000) },
@@ -79,8 +80,7 @@ export function TunerSection({
   return (
     <div className="rsec" id="r3" style={{ marginTop: 46 }}>
       <div className="sec-h">
-        <div className="no">3</div>
-        <h2>条件が変われば、こたえも変わります</h2>
+        <h2 style={{ fontSize: 17 }}>条件が変われば、こたえも変わります</h2>
         <div className="small">動かすとグラフが変わります</div>
       </div>
 
@@ -215,6 +215,7 @@ export function TunerSection({
               </div>
             ))}
           </div>
+          <Cites indexes={result.rateSourceIndex} sources={result.sources} />
           <div className="trbest">
             {changedBest ? (
               <>

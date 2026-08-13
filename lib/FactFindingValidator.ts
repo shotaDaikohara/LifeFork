@@ -1,4 +1,5 @@
 import { factFindingResponseSchema, type FactFindingResponse } from "@/types/factFinding";
+import { stripNullValues } from "@/lib/jsonNormalize";
 
 export type FactFindingValidationResult =
   | { ok: true; data: FactFindingResponse }
@@ -18,7 +19,7 @@ export function validateFactFindingResponse(raw: string): FactFindingValidationR
     return { ok: false, message: "モデル出力がJSONとして解釈できませんでした。" };
   }
 
-  const result = factFindingResponseSchema.safeParse(parsed);
+  const result = factFindingResponseSchema.safeParse(stripNullValues(parsed));
   if (!result.success) {
     const issues = result.error.issues
       .slice(0, 5)

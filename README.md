@@ -129,7 +129,8 @@ UI案の「今のまま＋3つの道」比較・年次推移・条件シミュ�
 
 ユーザー入力（プロフィール・将来像・ヒアリング回答）を受け取り、比較結果（`ResearchResult`）を返します。ログイン必須。
 
-- リクエスト/レスポンスの意味構造は [`types/research.ts`](./types/research.ts) を参照してください。`currentPath`（今のまま）と `targetPaths`（進める道、必ず3件）、各パスの年次シーン（`yearlyScenes.y1/y3/y5`）・グラフ用数値系列（`series`）・条件シミュレーション係数（`tuneFactors`）・チェックリスト（`checks`）を含みます。`summary` には「いま向いてる度」（`fitScore`）に加え、UI案の facts 表示に対応する `availableFundsManYen`（準備できるお金）・`survivalMonths`（生活できる期間）・`relevantExperienceLabel`/`relevantExperienceYears`（テーマ関連の経験）も含まれます。
+- リクエスト/レスポンスの意味構造は [`types/research.ts`](./types/research.ts) を参照してください。`currentPath`（今のまま）と `targetPaths`（進める道、必ず3件）、各パスの年次シーン（`yearlyScenes.y1/y3/y5`）・グラフ用数値系列（`series`）・条件シミュレーション係数（`tuneFactors`）・チェックリスト（`checks`）を含みます。`summary` には短いリード文（`lead`）に加え、UI案の facts 表示に対応する `fitScore`（いま向いてる度）・`availableFunds`（準備できるお金）・`survivalPeriod`（生活できる期間）・`relevantExperience`（テーマ関連の経験）を含みます（いずれも `{label, value, unit}` の fact 形式）。
+- **出典番号参照**: `sources` は `{title, url}` の配列で、`summary.leadSourceIndexes` / 各 fact の `sourceIndex` / `checks[].sourceIndex` / `currentPath.sourceIndex` / `targetPaths[].sourceIndex` / `rateSourceIndex` から、根拠として使った `sources` の1始まりのインデックスを（任意で）参照します。表示側は `lib/citations.tsx`（`Cite`/`Cites`/`CiteIn`）で該当箇所に小さくリンクを添えます。モデルが値を持たない任意項目に `null` を返すことがあるため、`lib/jsonNormalize.ts`（`stripNullValues`）で `null` を「未指定」としてスキーマ検証前に正規化しています。
 - ステータスコード: `200`(正常) / `400`(入力不正) / `401`(未認証) / `403`(ホワイトリスト対象外) / `429`(アプリRate Limit超過 or OrcaRouterレート制限) / `502`(上流エラー・応答検証失敗) / `504`(タイムアウト) / `500`(その他)
 - 内部は基礎調査(Pass1)→詳細生成(Pass2)の2段階（上記「Two-passアーキテクチャ」参照）。詳細生成の応答はプロンプト（`prompts/research_system.md`）に基づき構造化JSON（`ResearchResult`）で取得し、`lib/ResultValidator.ts` で zod スキーマ検証します。検証に失敗した場合は1回のみフォーマット修正を促して再試行し、それでも失敗すればエラーとして結果を返します（結果を捏造しません）。
 - ヒアリング質問はDBに保存しないため、動的生成された質問文はクライアントが `answers[].question` として再送します。

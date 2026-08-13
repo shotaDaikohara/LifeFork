@@ -1,4 +1,5 @@
 import { researchResultSchema, type ResearchResult } from "@/types/research";
+import { stripNullValues } from "@/lib/jsonNormalize";
 
 export type ValidationResult =
   | { ok: true; data: ResearchResult }
@@ -18,7 +19,7 @@ export function validateResearchResult(raw: string): ValidationResult {
     return { ok: false, message: "モデル出力がJSONとして解釈できませんでした。" };
   }
 
-  const result = researchResultSchema.safeParse(parsed);
+  const result = researchResultSchema.safeParse(stripNullValues(parsed));
   if (!result.success) {
     const issues = result.error.issues
       .slice(0, 5)

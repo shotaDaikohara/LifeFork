@@ -29,18 +29,33 @@
 - `sources` は実際に参照・想起できた情報源がある場合のみ記載し、存在しない URL やタイトルを創作しないこと。参照元が無い場合は空配列とすること。
 - 出力は指定された ResearchResult の JSON 構造のみとし、それ以外の自由形式のテキストやコードブロック、前置き・後書きの説明文を一切含めないこと。
 
+## 出典番号参照（sourceIndex）について
+
+`sources` は `[{ "title": "string", "url": "string" }, ...]` という配列です。本文中に出典を埋め込むのではなく、根拠を示せる箇所ごとに `sources` 配列の**何番目か（1始まり）**を数値で指定してください（`sources[0]` を参照する場合は `1`）。
+
+- 対象フィールド: `summary.leadSourceIndexes`（配列、複数可）、`summary.fitScore.sourceIndex` 等の各 fact、`checks[].sourceIndex`、`currentPath.sourceIndex`、`targetPaths[].sourceIndex`、`rateSourceIndex`。すべて**省略可**のオプションフィールドです。
+- 実際に根拠にした情報源がある場合のみ番号を付け、存在しない番号（`sources` の要素数を超える番号や `0` 以下）を指定しないこと。
+- 根拠が推測・一般論であり特定の情報源に基づかない場合は、無理に番号を付けず省略すること。
+- `targetPaths[].sourceIndex` はそのパス全体（`detail`・`plan`・`yearlyScenes` 等）を通じた主要な根拠1件を表す想定です。複数の根拠がある場合は最も重要な1件を選んでください。
+- `rateSourceIndex` は条件シミュレーション（`tuneFactors` に基づく実現しやすさの目安全体）の主な根拠です。
+
 ## 各フィールドの生成方針
+
+### summary.lead / leadSourceIndexes
+
+`lead` は結論を1文程度で述べる短いリード文です（旧来の詳しい比較説明ではなく、UI上は小さく表示されるため簡潔に）。詳しい説明は `checks` や各パスの `outlook` / `detail` に譲ってください。根拠となる `sources` があれば `leadSourceIndexes` に番号を列挙してください。
 
 ### summary.fitScore（いま向いてる度、0〜100の目安）
 
-ユーザーの入力条件（資金・経験・時間的余裕など）から見た「進める道への現実的な近さ」の相対的な目安です。厳密な計算式に基づくものではないため、過度に精密な値（例: 63.4）ではなく、10刻み程度のキリの良い値を目安に、なぜその水準かが `summary.comparisonConclusion` や各パスの説明から読み取れるようにしてください。
+`{ "label": "いま向いてる度", "value": 0-100, "unit": "/100", "sourceIndex": 任意 }` の形式です。ユーザーの入力条件（資金・経験・時間的余裕など）から見た「進める道への現実的な近さ」の相対的な目安です。厳密な計算式に基づくものではないため、過度に精密な値（例: 63.4）ではなく、10刻み程度のキリの良い値を目安に、なぜその水準かが `lead` や各パスの説明から読み取れるようにしてください。
 
-### summary.availableFundsManYen / survivalMonths / relevantExperienceLabel / relevantExperienceYears
+### summary.availableFunds / survivalPeriod / relevantExperience
 
-- `availableFundsManYen`: ユーザーが準備できる資金（貯金など）の目安（万円）。ヒアリング回答に貯金額の情報があればそれを使い、なければ入力条件から妥当な範囲で推定し、その旨を `limitations` に記載してください。根拠が全くない場合は `0` としてください。
-- `survivalMonths`: 上記の資金で、収入が途絶えた場合に生活を維持できるおおよその月数（`availableFundsManYen ÷ 想定月間生活費` の目安）。
-- `relevantExperienceLabel`: 検討している道に直接関係する経験の名称（例: 「いちご栽培経験」「飲食店の実務経験」「IT/プロダクト開発の経験」など、テーマに応じて具体的な名称にすること）。
-- `relevantExperienceYears`: 上記経験の年数（0でもよい）。
+いずれも `{ "label": "string", "value": number, "unit": "string", "sourceIndex": 任意 }` の fact 形式です。
+
+- `availableFunds`: ユーザーが準備できる資金（貯金など）の目安。`label` は「準備できるお金」、`unit` は「万円」を基本とする。ヒアリング回答に貯金額の情報があればそれを使い、なければ入力条件から妥当な範囲で推定し、その旨を `limitations` に記載してください。根拠が全くない場合は `value: 0` としてください。
+- `survivalPeriod`: 上記の資金で、収入が途絶えた場合に生活を維持できるおおよその期間。`label` は「生活できる期間」、`unit` は「か月」を基本とする（`availableFunds.value ÷ 想定月間生活費` の目安）。
+- `relevantExperience`: 検討している道に直接関係する経験。`label` は検討している道に応じた具体的な経験名（例: 「いちご栽培経験」「飲食店の実務経験」「IT/プロダクト開発の経験」など）にし、`value` はその経験年数（0でもよい）、`unit` は「年」を基本とする。
 
 ### currentPath.yearlyScenes / targetPaths[].yearlyScenes（y1 / y3 / y5）
 
@@ -76,7 +91,7 @@
 
 ### checks（足りているもの・足りないもの、3〜8件）
 
-ユーザーの入力条件から見て、進める道の実現に対して「足りている（`ok`）」「足りていない（`ng`）」と判断できる項目を挙げてください。`ok` と `ng` の両方を含めてください。
+ユーザーの入力条件から見て、進める道の実現に対して「足りている（`ok`）」「足りていない（`ng`）」と判断できる項目を挙げてください。`ok` と `ng` の両方を含めてください。相場データ等、根拠となる情報源がある項目には `sourceIndex` を付けてください。
 
 ## 入力情報の扱い
 
@@ -95,12 +110,12 @@
 {
   "summary": {
     "headline": "string",
-    "comparisonConclusion": "string",
-    "fitScore": 0,
-    "availableFundsManYen": 0,
-    "survivalMonths": 0,
-    "relevantExperienceLabel": "string",
-    "relevantExperienceYears": 0
+    "lead": "string",
+    "leadSourceIndexes": [1],
+    "fitScore": { "label": "いま向いてる度", "value": 0, "unit": "/100", "sourceIndex": 1 },
+    "availableFunds": { "label": "準備できるお金", "value": 0, "unit": "万円" },
+    "survivalPeriod": { "label": "生活できる期間", "value": 0, "unit": "か月" },
+    "relevantExperience": { "label": "string", "value": 0, "unit": "年" }
   },
   "currentPath": {
     "title": "今のまま",
@@ -113,7 +128,8 @@
       "y3": { "headline": "string", "narrative": "string", "stats": [{ "label": "string", "value": "string" }] },
       "y5": { "headline": "string", "narrative": "string", "stats": [{ "label": "string", "value": "string" }] }
     },
-    "series": { "income": [0,0,0,0], "savings": [0,0,0,0], "dreamCloseness": [0,0,0,0], "satisfaction": [0,0,0,0] }
+    "series": { "income": [0,0,0,0], "savings": [0,0,0,0], "dreamCloseness": [0,0,0,0], "satisfaction": [0,0,0,0] },
+    "sourceIndex": 1
   },
   "targetPaths": [
     {
@@ -131,14 +147,17 @@
       "series": { "income": [0,0,0,0], "savings": [0,0,0,0], "dreamCloseness": [0,0,0,0], "satisfaction": [0,0,0,0] },
       "tuneFactors": { "base": 0, "savingsSensitivity": 0, "prepMonthsSensitivity": 0, "weeklyHoursSensitivity": 0, "relocationSensitivity": 0 },
       "firstStep": { "headline": "string", "body": "string" },
-      "plan": [{ "period": "1〜2か月", "title": "string", "detail": "string" }]
+      "plan": [{ "period": "1〜2か月", "title": "string", "detail": "string" }],
+      "sourceIndex": 1
     }
   ],
-  "checks": [{ "status": "ok|ng", "title": "string", "detail": "string" }],
-  "sources": [{ "title": "string", "url": "string", "usedFor": "string" }],
+  "checks": [{ "status": "ok|ng", "title": "string", "detail": "string", "sourceIndex": 1 }],
+  "rateSourceIndex": 1,
+  "sources": [{ "title": "string", "url": "string" }],
   "limitations": ["string"]
 }
 ```
 
 `targetPaths` は必ずちょうど3件、`id` は `"a"` `"b"` `"c"` のように一意な短い文字列にしてください。
 年収は日本円（整数、円単位）を基本とする。ユーザー入力から通貨単位が不明な場合はその旨を `limitations` に記載すること。
+`sourceIndex` / `leadSourceIndexes` / `rateSourceIndex` はすべて任意項目です。根拠が明確な場合のみ、`sources` 配列の1始まりのインデックスを指定してください（無理に付与しないこと）。
