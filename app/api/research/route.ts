@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { researchRequestSchema } from "@/types/research";
+import { researchRequestSchema, type ResearchRequest } from "@/types/research";
 import { buildFactFindingPrompt, buildResearchPrompt } from "@/lib/PromptBuilder";
 import {
   getModelAuto,
@@ -8,6 +8,7 @@ import {
   requestResearchCompletion,
   routerDebugHeaders,
 } from "@/lib/OrcaRouterClient";
+import { runOrchestratedFactFinding } from "@/lib/researchOrchestrator";
 import { validateResearchResult } from "@/lib/ResultValidator";
 import { validateFactFindingResponse } from "@/lib/FactFindingValidator";
 import type { FactFindingResponse } from "@/types/factFinding";
@@ -97,17 +98,30 @@ export async function POST(request: Request) {
  * Pass1（基礎調査）をベストエフォートで実行する。
  * ORCAROUTER_FACT_MODEL 未設定、タイムアウト、検証失敗など、いかなる理由でも
  * 例外を外へ投げず、詳細生成 (Pass2) は facts なしで続行できるようにする。
+ *
+ * mode によって構成を切り替える（設計・実測は docs/api-cost.md 参照）:
+ * - "eco": 単一のAPI呼び出しに任せる（低コスト、カバレッジは不安定）。
+ * - "normal": lib/researchOrchestrator.ts の3段階オーケストレーション
+ *   （候補生成→個別グラウンディング→深掘り）で複数回に分けて検索する。
  */
 async function runFactFindingBestEffort(
-  request: Parameters<typeof buildFactFindingPrompt>[0],
+  request: Pick<ResearchRequest, "profile" | "goal" | "mode">,
 ): Promise<FactFindingResponse | undefined> {
   if (!isFactFindingConfigured()) return undefined;
 
+  if (request.mode === "eco") {
+    try {
+      const prompt = await buildFactFindingPrompt(request);
+      const { content } = await requestFactFindingCompletion(prompt);
+      const validation = validateFactFindingResponse(content);
+      return validation.ok ? validation.data : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
   try {
-    const prompt = await buildFactFindingPrompt(request);
-    const { content } = await requestFactFindingCompletion(prompt);
-    const validation = validateFactFindingResponse(content);
-    return validation.ok ? validation.data : undefined;
+    return await runOrchestratedFactFinding(request);
   } catch {
     return undefined;
   }

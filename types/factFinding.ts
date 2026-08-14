@@ -15,3 +15,26 @@ export const factFindingResponseSchema = z.object({
   sources: z.array(sourceSchema).default([]),
 });
 export type FactFindingResponse = z.infer<typeof factFindingResponseSchema>;
+
+/**
+ * 個別グラウンディング・深掘り呼び出し（`lib/researchOrchestrator.ts`）1回分のレスポンス型。
+ * `factFindingResponseSchema` とほぼ同じ形だが、1トピックぶんの軽量な回答を想定し
+ * `facts` は最大3件に絞る（実在しない場合は空配列を許容）。
+ */
+export const topicFindingResponseSchema = z.object({
+  facts: z.array(z.string()).max(3).default([]),
+  sources: z.array(sourceSchema).default([]),
+});
+export type TopicFindingResponse = z.infer<typeof topicFindingResponseSchema>;
+
+/**
+ * オーケストレーション（`lib/researchOrchestrator.ts`）で複数呼び出しの結果を
+ * マージした最終形。`factFindingResponseSchema` は単一LLM呼び出しの出力検証用に
+ * `facts` を最大8件に制限しているが、マージ後はステージ数ぶん増えるため上限を緩めた
+ * 型を別途用意する（LLMの出力そのものの検証には使わない、コード内で組み立てる値）。
+ */
+export const mergedFactFindingSchema = z.object({
+  facts: z.array(z.string()).max(40),
+  sources: z.array(sourceSchema).default([]),
+});
+export type MergedFactFinding = z.infer<typeof mergedFactFindingSchema>;

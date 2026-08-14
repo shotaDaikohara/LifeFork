@@ -2,7 +2,8 @@ import OpenAI from "openai";
 import { z } from "zod";
 import { researchResultSchema } from "@/types/research";
 import { interviewResponseSchema } from "@/types/interview";
-import { factFindingResponseSchema } from "@/types/factFinding";
+import { factFindingResponseSchema, topicFindingResponseSchema } from "@/types/factFinding";
+import { researchCandidatesSchema } from "@/types/researchCandidates";
 import { ResearchError } from "@/lib/errors";
 
 /**
@@ -27,6 +28,9 @@ const DEFAULT_TIMEOUT_MS = 45_000;
 // Pass1(基礎調査)は軽量出力想定のため短めに設定し、Vercel maxDuration(60s)内で
 // Pass1 + Pass2 の合計が収まるようにする。
 const DEFAULT_FACT_TIMEOUT_MS = 15_000;
+// Pass1オーケストレーション（mode: "normal"、lib/researchOrchestrator.ts）の
+// ステージ2/3は1トピックだけを扱う軽量呼び出しのため、さらに短く・並列実行前提で設定する。
+const DEFAULT_GROUNDING_TIMEOUT_MS = 12_000;
 
 function getEnv() {
   const apiKey = process.env.ORCAROUTER_API_KEY;
@@ -45,10 +49,11 @@ function getEnv() {
   const modelAuto = process.env.ORCAROUTER_MODEL_AUTO || DEFAULT_MODEL;
   const timeoutMs = Number(process.env.ORCAROUTER_TIMEOUT_MS) || DEFAULT_TIMEOUT_MS;
   const factTimeoutMs = Number(process.env.ORCAROUTER_FACT_TIMEOUT_MS) || DEFAULT_FACT_TIMEOUT_MS;
+  const groundingTimeoutMs = Number(process.env.ORCAROUTER_GROUNDING_TIMEOUT_MS) || DEFAULT_GROUNDING_TIMEOUT_MS;
   // 設計書9.5章: Web Searchの実発火をモデル/ルートごとに確認したうえで有効化する。
   // 対応が未確認のモデルではデフォルトで無効。
   const webSearchEnabled = process.env.ORCAROUTER_WEB_SEARCH === "true";
-  return { apiKey, baseURL, model, factModel, modelAuto, timeoutMs, factTimeoutMs, webSearchEnabled };
+  return { apiKey, baseURL, model, factModel, modelAuto, timeoutMs, factTimeoutMs, groundingTimeoutMs, webSearchEnabled };
 }
 
 /**
@@ -118,6 +123,8 @@ function toJsonSchema(schema: z.core.$ZodType): Record<string, unknown> {
 const researchResultJsonSchema = toJsonSchema(researchResultSchema);
 const interviewResponseJsonSchema = toJsonSchema(interviewResponseSchema);
 const factFindingJsonSchema = toJsonSchema(factFindingResponseSchema);
+const researchCandidatesJsonSchema = toJsonSchema(researchCandidatesSchema);
+const topicFindingJsonSchema = toJsonSchema(topicFindingResponseSchema);
 
 export interface ChatMessages {
   system: string;
@@ -275,6 +282,50 @@ export async function requestFactFindingCompletion(messages: ChatMessages): Prom
     useWebSearch: true,
     model: factModel,
     timeoutMs: factTimeoutMs,
+  });
+}
+
+/**
+ * OrcaRouter へ Pass1オーケストレーション ステージ1（候補生成）を依頼する。
+ * Web検索は行わない（`useWebSearch: false`）。`ORCAROUTER_FACT_MODEL` を流用するが
+ * 検索なしのため実質どのモデルでもよい（設計は docs/api-cost.md 参照）。
+ */
+export async function requestCandidatesCompletion(messages: ChatMessages): Promise<CompletionResult> {
+  const { factModel, factTimeoutMs } = getEnv();
+  if (!factModel) {
+    throw new ResearchError(
+      "internal_error",
+      "ORCAROUTER_FACT_MODEL が設定されていません。",
+    );
+  }
+  return requestStructuredCompletion(messages, {
+    schemaName: "research_candidates",
+    jsonSchema: researchCandidatesJsonSchema,
+    useWebSearch: false,
+    model: factModel,
+    timeoutMs: factTimeoutMs,
+  });
+}
+
+/**
+ * OrcaRouter へ Pass1オーケストレーション ステージ2/3（個別グラウンディング・深掘り）を
+ * 依頼する。1トピックだけを扱う軽量呼び出しで、`lib/researchOrchestrator.ts` から
+ * 複数トピック分を並列に呼び出される想定のため、タイムアウトを短めに設定する。
+ */
+export async function requestGroundingCompletion(messages: ChatMessages): Promise<CompletionResult> {
+  const { factModel, groundingTimeoutMs } = getEnv();
+  if (!factModel) {
+    throw new ResearchError(
+      "internal_error",
+      "ORCAROUTER_FACT_MODEL が設定されていません。",
+    );
+  }
+  return requestStructuredCompletion(messages, {
+    schemaName: "topic_finding",
+    jsonSchema: topicFindingJsonSchema,
+    useWebSearch: true,
+    model: factModel,
+    timeoutMs: groundingTimeoutMs,
   });
 }
 
