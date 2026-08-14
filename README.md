@@ -21,7 +21,7 @@ S01 入力 → S02 ヒアリング(AI動的生成) → S03 リサーチ中 → S
 0. **ログイン** — `/`〜`/result` はログイン必須です。未認証の場合 `/login` へ誘導され、Googleアカウントでログインします。事前登録（`ALLOWED_EMAILS`）されたメールアドレス以外は利用できません。
 1. **S01 入力** — 「やってみたいこと」（検討したい将来像）と、検討している方向性（転職 or 独立）のみを入力します（UI案準拠。職種・経験年数・年収などの基本情報はここでは尋ねません）。
 2. **S02 ヒアリング** — `POST /api/interview` を呼び出し、S01の入力をもとにOrcaRouterが最大4問の追加質問を**1回だけ**生成します。現在の職種・資金面などの基本情報もこの中で優先的に質問されます。回答ごとの逐次質問生成（多段ヒアリング）は行いません。
-3. **S03 リサーチ中** — `POST /api/research` を呼び出し、OrcaRouter経由でリサーチ結果を取得します（内部では基礎調査→詳細生成の2段階、後述）。
+3. **S03 リサーチ中** — `POST /api/research` を呼び出し、OrcaRouter経由でリサーチ結果を取得します（内部では基礎調査→詳細生成の2段階。基礎調査は`mode`により単一呼び出し/複数段オーケストレーションを切り替え、後述）。
 4. **S04 比較結果** — 「今のまま」と、そこから進める3つの道（A/B/C、UI案準拠）を比較表示します。カード選択・年次シーン・条件シミュレーション（貯金/準備期間/週の時間/引っ越し可否をスライダーで動かすとグラフと確率が再計算されるUI）を含みます。取得・検証に失敗した場合は結果を捏造せずエラーを表示します。
 
 ## セットアップ
@@ -83,10 +83,12 @@ curl http://localhost:3000/api/health
 | --- | --- | --- |
 | `ORCAROUTER_API_KEY` | ✅ | OrcaRouterのAPIキー。サーバー側でのみ使用し、ブラウザへは渡しません。 |
 | `ORCAROUTER_BASE_URL` | - | OrcaRouterのBase URL。未設定時は `https://api.orcarouter.ai/v1`。 |
-| `ORCAROUTER_MODEL` | - | 詳細生成 (Pass2) に使うモデル/ルーターID。未設定時は `orcarouter/auto`。`openai/gpt-4o-mini` で動作確認済み。 |
-| `ORCAROUTER_FACT_MODEL` | - | 基礎調査 (Pass1) に使うWeb Search対応モデル。未設定時は基礎調査自体をスキップします。`openai/gpt-4o-mini-search-preview` は実検索(`url_citation`)の発火を確認済み。 |
+| `ORCAROUTER_MODEL` | - | `mode: "eco"` でPass2（詳細生成）に使う固定モデル/ルーターID。未設定時は `orcarouter/auto`。`openai/gpt-4o-mini` で動作確認済み。 |
+| `ORCAROUTER_MODEL_AUTO` | - | `mode: "normal"` でPass2に使うモデル/ルーターID。「どのモデルを割り当てるか」の判断をアプリ側では行わずOrcaRouterに委ねる位置づけ。未設定時は `orcarouter/auto`。 |
+| `ORCAROUTER_FACT_MODEL` | - | 基礎調査 (Pass1) に使うWeb Search対応モデル。未設定時は基礎調査自体をスキップします。`openai/gpt-4o-mini-search-preview` は実検索(`url_citation`)の発火を確認済み。`mode`に関わらず同じモデルを使う。 |
 | `ORCAROUTER_TIMEOUT_MS` | - | Pass2（詳細生成）呼び出しのタイムアウト（ミリ秒）。未設定時は `45000`。 |
-| `ORCAROUTER_FACT_TIMEOUT_MS` | - | Pass1（基礎調査）呼び出しのタイムアウト（ミリ秒）。未設定時は `15000`。 |
+| `ORCAROUTER_FACT_TIMEOUT_MS` | - | `mode: "eco"` のPass1（単一呼び出し）のタイムアウト（ミリ秒）。未設定時は `15000`。 |
+| `ORCAROUTER_GROUNDING_TIMEOUT_MS` | - | `mode: "normal"` のPass1オーケストレーション、ステージ2/3の1呼び出しあたりのタイムアウト（ミリ秒）。並列実行前提で短めに設定。未設定時は `12000`。 |
 | `ORCAROUTER_WEB_SEARCH` | - | `true` にするとPass1（基礎調査）に `web_search_options` を付与しWeb Searchを有効化します。未設定時は `false`。 |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | ✅ | Google Cloud ConsoleでのOAuthクライアント情報。 |
 | `AUTH_SECRET` | ✅ | Auth.jsのセッション署名用シークレット。 |
@@ -99,10 +101,12 @@ UI案の「今のまま＋3つの道」比較・年次推移・条件シミュ�
 
 そのため `POST /api/research` は内部で2段階の呼び出しを行います（[`app/api/research/route.ts`](./app/api/research/route.ts)）。
 
-1. **Pass1（基礎調査）**: `ORCAROUTER_FACT_MODEL`（Web Search対応）で、関連する事実・相場・参考URLを最大8件の簡潔な箇条書きとして取得します（[`prompts/research_facts.md`](./prompts/research_facts.md)）。ベストエフォートで、未設定・失敗時は空のまま次に進みます。
-2. **Pass2（詳細生成）**: Pass1の結果を [`lib/PromptBuilder.ts`](./lib/PromptBuilder.ts) 経由でプロンプトに埋め込み、`ORCAROUTER_MODEL`（Web Searchなしの通常モデル）で `ResearchResult` 全体を生成します。出力トークン上限の制約を受けないため、情報量の多いJSONも最後まで生成できます。
+1. **Pass1（基礎調査）**: Web Search対応の `ORCAROUTER_FACT_MODEL` で、関連する事実・相場・参考URLを取得します（[`prompts/research_facts.md`](./prompts/research_facts.md)）。ベストエフォートで、未設定・失敗時は空のまま次に進みます。**実装は `mode`（リクエストの `mode: "eco" | "normal"`）で切り替わります**（設計・実測の詳細は [`docs/api-cost.md`](./docs/api-cost.md) 参照）。
+   - `mode: "eco"`: 1回のAPI呼び出しにまとめて任せます。低コストですが、複数の観点（ベースラインの事実／代替ルートの実在探索）を1回で安定して網羅できるとは限りません。
+   - `mode: "normal"`: [`lib/researchOrchestrator.ts`](./lib/researchOrchestrator.ts) が3段階のオーケストレーションを行います。①候補生成（`goal.type`に応じた代替ルート候補を最大6件、Web検索なしで発想）→②個別グラウンディング（ベースライン＋候補ごとに1件、並列でWeb検索し実在を確認。出典が付かない候補は脱落）→③深掘り（グラウンディングに成功した候補のうち情報源が多い上位3件について、具体的な金額・要件を追加取得）。実測で10〜11回のAPI呼び出し・15〜17秒。
+2. **Pass2（詳細生成）**: Pass1の結果を [`lib/PromptBuilder.ts`](./lib/PromptBuilder.ts) 経由でプロンプトに埋め込み、Web Searchなしの通常モデル（`mode: "eco"` は `ORCAROUTER_MODEL`、`mode: "normal"` は `ORCAROUTER_MODEL_AUTO`）で `ResearchResult` 全体を生成します。出力トークン上限の制約を受けないため、情報量の多いJSONも最後まで生成できます。
 
-実測（`gpt-4o-mini-search-preview` + `gpt-4o-mini`）: Pass1 約7〜9秒、Pass2 約50〜65秒、合計1分前後。`app/api/research/route.ts` は `maxDuration = 120` を設定しています（VercelはHobbyプランでも Fluid Compute 有効時は最大300秒まで設定可能）。
+実測（`gpt-4o-mini-search-preview` + `gpt-4o-mini`、`mode: "eco"`）: Pass1 約7〜9秒、Pass2 約50〜65秒、合計1分前後。`app/api/research/route.ts` は `maxDuration = 120` を設定しています（VercelはHobbyプランでも Fluid Compute 有効時は最大300秒まで設定可能）。モデル選択・1回あたりのコスト試算（現状/推奨/最高性能の3グレード）は [`docs/api-cost.md`](./docs/api-cost.md) にまとめています。
 
 ## 認証・認可・API乱用防止（設計書v0.4 14章）
 
@@ -127,8 +131,9 @@ UI案の「今のまま＋3つの道」比較・年次推移・条件シミュ�
 
 ### `POST /api/research`
 
-ユーザー入力（プロフィール・将来像・ヒアリング回答）を受け取り、比較結果（`ResearchResult`）を返します。ログイン必須。
+ユーザー入力（プロフィール・将来像・ヒアリング回答・`mode`）を受け取り、比較結果（`ResearchResult`）を返します。ログイン必須。
 
+- `mode`: `"normal"`（既定、Pass1を3段階オーケストレーションで実行）または `"eco"`（Pass1を単一呼び出しで実行、低コスト）。詳細は上記「Two-passアーキテクチャ」および [`docs/api-cost.md`](./docs/api-cost.md) 参照。
 - リクエスト/レスポンスの意味構造は [`types/research.ts`](./types/research.ts) を参照してください。`currentPath`（今のまま）と `targetPaths`（進める道、必ず3件）、各パスの年次シーン（`yearlyScenes.y1/y3/y5`）・グラフ用数値系列（`series`）・条件シミュレーション係数（`tuneFactors`）・チェックリスト（`checks`）を含みます。`summary` には短いリード文（`lead`）に加え、UI案の facts 表示に対応する `fitScore`（いま向いてる度）・`availableFunds`（準備できるお金）・`survivalPeriod`（生活できる期間）・`relevantExperience`（テーマ関連の経験）を含みます（いずれも `{label, value, unit}` の fact 形式）。
 - **出典番号参照**: `sources` は `{title, url}` の配列で、`summary.leadSourceIndexes` / 各 fact の `sourceIndex` / `checks[].sourceIndex` / `currentPath.sourceIndex` / `targetPaths[].sourceIndex` / `rateSourceIndex` から、根拠として使った `sources` の1始まりのインデックスを（任意で）参照します。表示側は `lib/citations.tsx`（`Cite`/`Cites`/`CiteIn`）で該当箇所に小さくリンクを添えます。モデルが値を持たない任意項目に `null` を返すことがあるため、`lib/jsonNormalize.ts`（`stripNullValues`）で `null` を「未指定」としてスキーマ検証前に正規化しています。
 - ステータスコード: `200`(正常) / `400`(入力不正) / `401`(未認証) / `403`(ホワイトリスト対象外) / `429`(アプリRate Limit超過 or OrcaRouterレート制限) / `502`(上流エラー・応答検証失敗) / `504`(タイムアウト) / `500`(その他)
@@ -151,7 +156,7 @@ app/
   login/page.tsx               # ログイン画面 (UI案ランディングを流用)
   api/auth/[...nextauth]/route.ts  # Auth.js ハンドラ
   api/interview/route.ts      # POST /api/interview (InterviewController)
-  api/research/route.ts       # POST /api/research (ResearchController, Two-pass)
+  api/research/route.ts       # POST /api/research (ResearchController, Two-pass, mode: eco/normal)
   api/health/route.ts         # GET /api/health
 auth.ts                       # Auth.js設定 (Google OIDC + ホワイトリスト判定)
 proxy.ts                      # 画面のログイン必須化 (Next.js 16 Proxy、旧Middleware)
@@ -166,10 +171,13 @@ components/
 lib/
   OrcaRouterClient.ts          # OrcaRouter (OpenAI互換API) 呼び出し (interview/research Pass1・Pass2共通)
   PromptBuilder.ts             # システムプロンプト + ユーザー入力の組み立て (Pass1/Pass2)
+  researchOrchestrator.ts      # Pass1 (mode: "normal") の3段階オーケストレーション
   InterviewValidator.ts        # InterviewResponse のスキーマ検証
   ResultValidator.ts           # ResearchResult のスキーマ検証
-  FactFindingValidator.ts      # Pass1 (基礎調査) レスポンスのスキーマ検証
+  FactFindingValidator.ts      # Pass1 (基礎調査、mode: "eco") レスポンスのスキーマ検証
+  jsonNormalize.ts             # モデル出力のnull正規化 (stripNullValues)
   tuneMath.ts                  # 条件シミュレーションの近似再計算ロジック
+  citations.tsx                # 出典番号参照の表示ヘルパー (Cite/Cites/CiteIn)
   allowedEmails.ts             # ALLOWED_EMAILS ホワイトリスト判定
   apiGuard.ts                  # API向け 認証・認可・Rate Limit ガード
   rateLimit.ts                 # ユーザー単位 Rate Limit (Fixed Window)
@@ -178,11 +186,16 @@ lib/
 prompts/
   interview_system.md          # ヒアリング質問生成プロンプト（外部ファイル管理）
   research_system.md           # 詳細生成 (Pass2) 用システムプロンプト（外部ファイル管理）
-  research_facts.md            # 基礎調査 (Pass1) 用システムプロンプト（外部ファイル管理）
+  research_facts.md            # 基礎調査 (Pass1, mode: "eco") 用システムプロンプト（外部ファイル管理）
+  research_candidates.md       # Pass1オーケストレーション ステージ1(候補生成)用プロンプト
+  research_grounding.md        # Pass1オーケストレーション ステージ2/3(個別グラウンディング・深掘り)用プロンプト
 types/
   interview.ts                  # InterviewQuestion等のドメイン型
   research.ts                   # ResearchResult等のドメイン型 (zodスキーマが単一の情報源)
   factFinding.ts                # Pass1 (基礎調査) レスポンスの型
+  researchCandidates.ts         # Pass1オーケストレーション ステージ1(候補生成)の型
+docs/
+  api-cost.md                   # 利用モデル・切り替え方法・1回あたりのコスト試算(現状/推奨/最高性能)
 demo/champion.html            # 発表用チャンピオンデータ（UI案 lifefork_demo.html を採用、Liveシステムと分離）
 ```
 
@@ -204,10 +217,12 @@ demo/champion.html            # 発表用チャンピオンデータ（UI案 lif
    | --- | --- |
    | `ORCAROUTER_API_KEY` | `<secret>`（Sensitive） |
    | `ORCAROUTER_BASE_URL` | `https://api.orcarouter.ai/v1` |
-   | `ORCAROUTER_MODEL` | `openai/gpt-4o-mini` など、詳細生成(Pass2)の出力量に耐えられる通常モデル |
+   | `ORCAROUTER_MODEL` | `openai/gpt-4o-mini` など、`mode: "eco"` のPass2の出力量に耐えられる通常モデル |
+   | `ORCAROUTER_MODEL_AUTO` | `orcarouter/auto` など、`mode: "normal"` のPass2に使うモデル/ルーターID |
    | `ORCAROUTER_FACT_MODEL` | `openai/gpt-4o-mini-search-preview` など疎通確認済みのWeb Search対応モデル |
    | `ORCAROUTER_TIMEOUT_MS` | `80000` |
    | `ORCAROUTER_FACT_TIMEOUT_MS` | `15000` |
+   | `ORCAROUTER_GROUNDING_TIMEOUT_MS` | `12000` |
    | `ORCAROUTER_WEB_SEARCH` | `true`（`ORCAROUTER_FACT_MODEL` がWeb Search対応モデルの場合） |
    | `GOOGLE_CLIENT_ID` | `<google oauth client id>` |
    | `GOOGLE_CLIENT_SECRET` | `<secret>`（Sensitive） |
