@@ -13,6 +13,8 @@
 
 `GET /v1/models`（OrcaRouter）のレスポンスにはこの課金が別項目として出てこない（`pricing`オブジェクトは`prompt`/`completion`の2項目のみ）が、これはOrcaRouterの料金ページ（「billed per token at the upstream provider's published rate」「we add nothing on top of token costs」）が指す“トークン課金”とは別枠のツール利用料であり、上流（OpenAI）側で実在が確認できる以上、**本ドキュメントでは課金ありを前提とする**。OrcaRouterがこの分をそのまま転嫁しているかどうかの最終確認（実際の請求）は未了。
 
+**妥当性チェック**: $10.00〜$25.00 / 1,000回（1回あたり$0.01〜$0.025、≒1.5〜3.75円）という単価は、他社の検索API（Google Custom Search JSON API: $5/1,000クエリ＝$0.005/回、SerpApi: 目安$0.01/回程度）と比べて同水準〜やや高めであり、特別に安すぎる数字ではない。
+
 ## 1. 利用モデルと切り替え方法
 
 | 用途 | 呼び出し箇所 | 環境変数 | 現在値 | Web Search |
