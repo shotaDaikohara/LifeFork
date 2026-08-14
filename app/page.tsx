@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { GoalType } from "@/types/research";
-import { saveProfileAndGoal, clearResultAndError } from "@/lib/researchSession";
+import type { GoalType, ResearchMode } from "@/types/research";
+import { saveProfileAndGoal, saveMode, clearResultAndError } from "@/lib/researchSession";
 
 const SUGGESTIONS: {
   emoji: string;
@@ -49,6 +49,7 @@ export default function InputPage() {
 
   const [goalDescription, setGoalDescription] = useState("");
   const [goalType, setGoalType] = useState<GoalType>("career_change");
+  const [mode, setMode] = useState<ResearchMode>("normal");
   const [error, setError] = useState<string | null>(null);
 
   function pickSuggestion(s: (typeof SUGGESTIONS)[number]) {
@@ -66,6 +67,7 @@ export default function InputPage() {
 
     clearResultAndError();
     saveProfileAndGoal({ fields: {} }, { type: goalType, description: goalDescription.trim() });
+    saveMode(mode);
     router.push("/interview");
   }
 
@@ -111,6 +113,28 @@ export default function InputPage() {
               独立を考えている
             </button>
           </div>
+        </div>
+
+        <div style={{ marginTop: 20 }}>
+          <div className="seg" role="group" aria-label="調べ方">
+            <button
+              type="button"
+              className={mode === "normal" ? "on" : ""}
+              onClick={() => setMode("normal")}
+            >
+              じっくり調べる
+            </button>
+            <button
+              type="button"
+              className={mode === "eco" ? "on" : ""}
+              onClick={() => setMode("eco")}
+            >
+              さくっと調べる（エコ）
+            </button>
+          </div>
+          <p className="tiny" style={{ margin: "8px 4px 0" }}>
+            じっくり調べるは、相談内容に応じて使うAIモデルの判断をAIルーター自身に任せます。さくっと調べるは常に軽量モデルで低コストに固定します
+          </p>
         </div>
 
         <div style={{ marginTop: 24 }}>

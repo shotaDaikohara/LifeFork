@@ -38,12 +38,38 @@ function getEnv() {
   // ステップのみで使い、詳細生成は常に Web Search なしの ORCAROUTER_MODEL で行う。
   // 未設定の場合は基礎調査自体をスキップする。
   const factModel = process.env.ORCAROUTER_FACT_MODEL || undefined;
+  // 通常モード（mode: "normal"）でPass2に使うモデルID。「このリクエストにどのモデルを
+  // 割り当てるべきか」の判断そのものをOrcaRouterに委ねるのが狙いのため、既定値は
+  // orcarouter/auto（OrcaRouter自身のRouterが選ぶ）とする。アプリ側では難易度判定や
+  // 昇格判断のロジックを一切持たない。設計は docs/orcarouter-routing-design.md 参照。
+  const modelAuto = process.env.ORCAROUTER_MODEL_AUTO || DEFAULT_MODEL;
   const timeoutMs = Number(process.env.ORCAROUTER_TIMEOUT_MS) || DEFAULT_TIMEOUT_MS;
   const factTimeoutMs = Number(process.env.ORCAROUTER_FACT_TIMEOUT_MS) || DEFAULT_FACT_TIMEOUT_MS;
   // 設計書9.5章: Web Searchの実発火をモデル/ルートごとに確認したうえで有効化する。
   // 対応が未確認のモデルではデフォルトで無効。
   const webSearchEnabled = process.env.ORCAROUTER_WEB_SEARCH === "true";
-  return { apiKey, baseURL, model, factModel, timeoutMs, factTimeoutMs, webSearchEnabled };
+  return { apiKey, baseURL, model, factModel, modelAuto, timeoutMs, factTimeoutMs, webSearchEnabled };
+}
+
+/**
+ * 通常モード（mode: "normal"）でPass2に使うモデルID。「どのモデルを使うべきか」の
+ * 判断をアプリ側では行わず、OrcaRouterの orcarouter/auto（既定）にそのまま委ねる。
+ * エコモード（mode: "eco"）はこれを使わず、常に ORCAROUTER_MODEL（固定・低コストモデル
+ * を想定）のみを使う。判断そのものを省略してコストを優先するモードという位置づけ。
+ */
+export function getModelAuto(): string {
+  return getEnv().modelAuto;
+}
+
+/**
+ * CompletionResult から、実際に選ばれたモデル・ルーターをクライアントへ可視化するための
+ * レスポンスヘッダーを組み立てる。デモ・デバッグ用途（設計は docs/orcarouter-routing-design.md 参照）。
+ */
+export function routerDebugHeaders(result: Pick<CompletionResult, "resolvedModel" | "router">): Record<string, string> {
+  const headers: Record<string, string> = {};
+  if (result.resolvedModel) headers["X-LifeFork-Resolved-Model"] = result.resolvedModel;
+  if (result.router) headers["X-LifeFork-Router"] = result.router;
+  return headers;
 }
 
 export function isOrcaRouterConfigured(): boolean {
@@ -51,12 +77,13 @@ export function isOrcaRouterConfigured(): boolean {
 }
 
 export function orcaRouterHealthInfo() {
-  const { baseURL, model, factModel, webSearchEnabled } = getEnv();
+  const { baseURL, model, factModel, modelAuto, webSearchEnabled } = getEnv();
   return {
     configured: isOrcaRouterConfigured(),
     baseUrl: baseURL,
     model,
     factModel: factModel ?? null,
+    modelAuto,
     webSearchEnabled,
   };
 }
@@ -97,6 +124,18 @@ export interface ChatMessages {
   user: string;
 }
 
+/**
+ * OrcaRouterのレスポンス。`x-orca-resolved-model` / `x-orca-router` ヘッダーから、
+ * 実際にリクエストを処理した実モデルIDと適用ルーター名を取得する。
+ * `orcarouter/auto` 等のRoutingを使う場合に「どのモデルが選ばれたか」を
+ * ログ・UIへ可視化するために利用する（設計は docs/orcarouter-routing-design.md 参照）。
+ */
+export interface CompletionResult {
+  content: string;
+  resolvedModel: string | null;
+  router: string | null;
+}
+
 interface StructuredCompletionOptions {
   schemaName: string;
   jsonSchema: Record<string, unknown>;
@@ -118,7 +157,7 @@ async function requestStructuredCompletion(
   messages: ChatMessages,
   { schemaName, jsonSchema, useWebSearch, model: modelOverride, timeoutMs: timeoutOverride }: StructuredCompletionOptions,
   retryHint?: string,
-): Promise<string> {
+): Promise<CompletionResult> {
   const { model: defaultModel, webSearchEnabled, timeoutMs: defaultTimeoutMs } = getEnv();
   const model = modelOverride ?? defaultModel;
   const requestTimeoutMs = timeoutOverride ?? defaultTimeoutMs;
@@ -135,57 +174,65 @@ async function requestStructuredCompletion(
   // web_search_options は gpt-4o-*-search-preview 等、対応が確認できたモデルでのみ付与する。
   const webSearchParams = useWebSearch && webSearchEnabled ? { web_search_options: {} } : {};
 
+  // .withResponse() で生レスポンスも取得し、x-orca-resolved-model / x-orca-router から
+  // 「orcarouter/auto 等のRoutingで実際にどのモデルが選ばれたか」を可視化できるようにする。
   const attemptWithSchema = async () => {
-    return openai.chat.completions.create(
-      {
-        model,
-        messages: chatMessages,
-        ...webSearchParams,
-        response_format: {
-          type: "json_schema",
-          json_schema: {
-            name: schemaName,
-            schema: jsonSchema,
-            strict: false,
+    return openai.chat.completions
+      .create(
+        {
+          model,
+          messages: chatMessages,
+          ...webSearchParams,
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: schemaName,
+              schema: jsonSchema,
+              strict: false,
+            },
           },
         },
-      },
-      { timeout: requestTimeoutMs },
-    );
+        { timeout: requestTimeoutMs },
+      )
+      .withResponse();
   };
 
   const attemptWithJsonObject = async () => {
-    return openai.chat.completions.create(
-      {
-        model,
-        messages: chatMessages,
-        ...webSearchParams,
-        response_format: { type: "json_object" },
-      },
-      { timeout: requestTimeoutMs },
-    );
+    return openai.chat.completions
+      .create(
+        {
+          model,
+          messages: chatMessages,
+          ...webSearchParams,
+          response_format: { type: "json_object" },
+        },
+        { timeout: requestTimeoutMs },
+      )
+      .withResponse();
   };
 
-  let response;
+  let result;
   try {
-    response = await attemptWithSchema();
+    result = await attemptWithSchema();
   } catch (err) {
     // モデル/ルーターが json_schema 未対応の場合は json_object にフォールバックする。
     if (isRetryableFormatError(err)) {
-      response = await withServerErrorRetry(attemptWithJsonObject);
+      result = await withServerErrorRetry(attemptWithJsonObject);
     } else {
       throw toResearchError(err);
     }
   }
 
-  const content = response.choices[0]?.message?.content;
+  const content = result.data.choices[0]?.message?.content;
   if (!content) {
     throw new ResearchError(
       "invalid_response",
       "OrcaRouterからの応答に本文が含まれていません。",
     );
   }
-  return content;
+  const resolvedModel = result.response.headers.get("x-orca-resolved-model");
+  const router = result.response.headers.get("x-orca-router");
+  return { content, resolvedModel, router };
 }
 
 /**
@@ -197,10 +244,11 @@ async function requestStructuredCompletion(
 export async function requestResearchCompletion(
   messages: ChatMessages,
   retryHint?: string,
-): Promise<string> {
+  modelOverride?: string,
+): Promise<CompletionResult> {
   return requestStructuredCompletion(
     messages,
-    { schemaName: "research_result", jsonSchema: researchResultJsonSchema, useWebSearch: false },
+    { schemaName: "research_result", jsonSchema: researchResultJsonSchema, useWebSearch: false, model: modelOverride },
     retryHint,
   );
 }
@@ -213,7 +261,7 @@ export function isFactFindingConfigured(): boolean {
   return Boolean(getEnv().factModel);
 }
 
-export async function requestFactFindingCompletion(messages: ChatMessages): Promise<string> {
+export async function requestFactFindingCompletion(messages: ChatMessages): Promise<CompletionResult> {
   const { factModel, factTimeoutMs } = getEnv();
   if (!factModel) {
     throw new ResearchError(
@@ -237,7 +285,7 @@ export async function requestFactFindingCompletion(messages: ChatMessages): Prom
 export async function requestInterviewCompletion(
   messages: ChatMessages,
   retryHint?: string,
-): Promise<string> {
+): Promise<CompletionResult> {
   return requestStructuredCompletion(
     messages,
     { schemaName: "interview_response", jsonSchema: interviewResponseJsonSchema, useWebSearch: false },

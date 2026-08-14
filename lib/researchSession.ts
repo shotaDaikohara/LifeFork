@@ -4,6 +4,7 @@ import type {
   Goal,
   InterviewAnswer,
   Profile,
+  ResearchMode,
   ResearchResult,
 } from "@/types/research";
 
@@ -17,6 +18,7 @@ const KEYS = {
   profile: "lifefork:profile",
   goal: "lifefork:goal",
   answers: "lifefork:answers",
+  mode: "lifefork:mode",
   result: "lifefork:result",
   error: "lifefork:error",
 } as const;
@@ -52,6 +54,16 @@ export function loadProfile(): Profile | null {
 
 export function loadGoal(): Goal | null {
   return readJson<Goal>(KEYS.goal);
+}
+
+// 通常モード（自動昇格あり）/ エコモード（昇格なし・低コスト優先）の選択。S01で選び、
+// S03（researching）で /api/research に渡す（設計は docs/orcarouter-routing-design.md 参照）。
+export function saveMode(mode: ResearchMode) {
+  writeJson(KEYS.mode, mode);
+}
+
+export function loadMode(): ResearchMode {
+  return readJson<ResearchMode>(KEYS.mode) ?? "normal";
 }
 
 export function saveAnswers(answers: InterviewAnswer[]) {

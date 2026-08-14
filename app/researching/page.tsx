@@ -6,6 +6,7 @@ import type { ApiErrorBody, ResearchRequest } from "@/types/research";
 import {
   loadAnswers,
   loadGoal,
+  loadMode,
   loadProfile,
   saveError,
   saveResult,
@@ -44,8 +45,9 @@ export default function ResearchingPage() {
       return;
     }
     const answers = loadAnswers();
+    const mode = loadMode();
 
-    const body: ResearchRequest = { profile, goal, answers };
+    const body: ResearchRequest = { profile, goal, answers, mode };
 
     (async () => {
       try {

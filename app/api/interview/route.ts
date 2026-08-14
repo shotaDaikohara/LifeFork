@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { interviewRequestSchema } from "@/types/interview";
 import { buildInterviewPrompt } from "@/lib/PromptBuilder";
-import { requestInterviewCompletion } from "@/lib/OrcaRouterClient";
+import { requestInterviewCompletion, routerDebugHeaders } from "@/lib/OrcaRouterClient";
 import { validateInterviewResponse } from "@/lib/InterviewValidator";
 import { ResearchError, toErrorResponse } from "@/lib/errors";
 import { requireAuthorizedUser } from "@/lib/apiGuard";
@@ -34,10 +34,13 @@ export async function POST(request: Request) {
 
     const prompt = await buildInterviewPrompt(parsed.data);
 
-    const rawFirst = await requestInterviewCompletion(prompt);
-    const firstValidation = validateInterviewResponse(rawFirst);
+    const first = await requestInterviewCompletion(prompt);
+    const firstValidation = validateInterviewResponse(first.content);
     if (firstValidation.ok) {
-      return NextResponse.json(firstValidation.data, { status: 200 });
+      return NextResponse.json(firstValidation.data, {
+        status: 200,
+        headers: routerDebugHeaders(first),
+      });
     }
 
     // 設計書13章の方針に準じ、JSON不正時は1回のみフォーマット修正の再問い合わせを行う。
@@ -47,10 +50,13 @@ export async function POST(request: Request) {
       `検証エラー: ${firstValidation.message}`,
     ].join("");
 
-    const rawSecond = await requestInterviewCompletion(prompt, retryHint);
-    const secondValidation = validateInterviewResponse(rawSecond);
+    const second = await requestInterviewCompletion(prompt, retryHint);
+    const secondValidation = validateInterviewResponse(second.content);
     if (secondValidation.ok) {
-      return NextResponse.json(secondValidation.data, { status: 200 });
+      return NextResponse.json(secondValidation.data, {
+        status: 200,
+        headers: routerDebugHeaders(second),
+      });
     }
 
     throw new ResearchError(

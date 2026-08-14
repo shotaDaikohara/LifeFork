@@ -57,10 +57,18 @@ export const interviewAnswerSchema = z.object({
 });
 export type InterviewAnswer = z.infer<typeof interviewAnswerSchema>;
 
+// mode: 「このリクエストにどのモデルを割り当てるべきか」の判断を誰が行うかのユーザー選択。
+// - normal: ORCAROUTER_MODEL_AUTO（既定 orcarouter/auto）を使い、判断そのものをOrcaRouterに委ねる。
+// - eco: ORCAROUTER_MODEL（固定・低コストモデル）のみを使い、判断コストを払わない。
+// アプリ側では難易度判定やモデル選択のロジックを一切持たない（docs/orcarouter-routing-design.md 参照）。
+export const researchModeSchema = z.enum(["normal", "eco"]).default("normal");
+export type ResearchMode = z.infer<typeof researchModeSchema>;
+
 export const researchRequestSchema = z.object({
   profile: profileSchema,
   goal: goalSchema,
   answers: z.array(interviewAnswerSchema).default([]),
+  mode: researchModeSchema,
 });
 export type ResearchRequest = z.infer<typeof researchRequestSchema>;
 

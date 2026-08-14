@@ -2,9 +2,11 @@ import { NextResponse } from "next/server";
 import { researchRequestSchema } from "@/types/research";
 import { buildFactFindingPrompt, buildResearchPrompt } from "@/lib/PromptBuilder";
 import {
+  getModelAuto,
   isFactFindingConfigured,
   requestFactFindingCompletion,
   requestResearchCompletion,
+  routerDebugHeaders,
 } from "@/lib/OrcaRouterClient";
 import { validateResearchResult } from "@/lib/ResultValidator";
 import { validateFactFindingResponse } from "@/lib/FactFindingValidator";
@@ -50,10 +52,20 @@ export async function POST(request: Request) {
 
     const prompt = await buildResearchPrompt(parsed.data, factFinding);
 
-    const rawFirst = await requestResearchCompletion(prompt);
-    const firstValidation = validateResearchResult(rawFirst);
+    // モデル選択方針（docs/orcarouter-routing-design.md 参照）:
+    // 「このリクエストにどのモデルを割り当てるべきか」の判断はアプリ側では一切行わず、
+    // 通常モード(mode: "normal")は毎回 orcarouter/auto（OrcaRouter自身の判断）に委ねる。
+    // エコモード(mode: "eco")は判断そのものを省略し、常に固定・低コストの ORCAROUTER_MODEL
+    // のみを使う。1回目・2回目(検証失敗時の再試行)とも同じ方針で統一する。
+    const modelOverride = parsed.data.mode === "normal" ? getModelAuto() : undefined;
+
+    const first = await requestResearchCompletion(prompt, undefined, modelOverride);
+    const firstValidation = validateResearchResult(first.content);
     if (firstValidation.ok) {
-      return NextResponse.json(firstValidation.data, { status: 200 });
+      return NextResponse.json(firstValidation.data, {
+        status: 200,
+        headers: routerDebugHeaders(first),
+      });
     }
 
     // 設計書13章: JSON不正時は余裕があれば1回のみフォーマット修正の再問い合わせを行う。
@@ -63,10 +75,13 @@ export async function POST(request: Request) {
       `検証エラー: ${firstValidation.message}`,
     ].join("");
 
-    const rawSecond = await requestResearchCompletion(prompt, retryHint);
-    const secondValidation = validateResearchResult(rawSecond);
+    const second = await requestResearchCompletion(prompt, retryHint, modelOverride);
+    const secondValidation = validateResearchResult(second.content);
     if (secondValidation.ok) {
-      return NextResponse.json(secondValidation.data, { status: 200 });
+      return NextResponse.json(secondValidation.data, {
+        status: 200,
+        headers: routerDebugHeaders(second),
+      });
     }
 
     throw new ResearchError(
@@ -90,8 +105,8 @@ async function runFactFindingBestEffort(
 
   try {
     const prompt = await buildFactFindingPrompt(request);
-    const raw = await requestFactFindingCompletion(prompt);
-    const validation = validateFactFindingResponse(raw);
+    const { content } = await requestFactFindingCompletion(prompt);
+    const validation = validateFactFindingResponse(content);
     return validation.ok ? validation.data : undefined;
   } catch {
     return undefined;
