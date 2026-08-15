@@ -15,7 +15,7 @@ export default async function LoginPage({
   const { error } = await searchParams;
 
   return (
-    <main className="stage">
+    <main className="stage login-landing">
       <div className="hero">
         <div className="hero-copy">
           <div className="hero-kicker">誰もがふと思いつく人生の分岐点を</div>
@@ -73,9 +73,6 @@ export default async function LoginPage({
                 Googleではじめる
               </button>
             </form>
-            <p className="tiny" style={{ textAlign: "center", marginTop: 12 }}>
-              毎月1回まで無料。名前の登録もアンケートもありません。
-            </p>
           </div>
         </div>
 
