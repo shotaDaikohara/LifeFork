@@ -67,6 +67,7 @@ npm run dev
 ```bash
 npm run build   # 型チェック込みの本番ビルド
 npm run lint    # ESLint
+npm test        # vitest（現状は lib/tuneMath.ts の条件シミュレーション計算のみカバー）
 ```
 
 `GET /api/health` で現在のOrcaRouter接続設定・Auth.js設定状況を確認できます。APIキー・シークレットの値そのものは返しません。

@@ -9,9 +9,23 @@ import type { Source } from "@/types/research";
  * 対応する要素が存在しない（未指定・範囲外）場合は何も描画しない。
  */
 
+// sources[].url はAIモデルの出力をそのままzodスキーマ（z.string()、URL形式チェックなし）
+// で通した値のため、`javascript:` 等の不正スキームが混入する可能性を排除できない。
+// href として使う直前に http(s) スキームのみへ絞り込む。
+function isSafeHttpUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 function resolveSource(sources: Source[], index?: number): Source | undefined {
   if (!index || index < 1) return undefined;
-  return sources[index - 1];
+  const src = sources[index - 1];
+  if (!src || !isSafeHttpUrl(src.url)) return undefined;
+  return src;
 }
 
 /** 出典バッジ1件（UI案 a.cite）。単独で本文の近くに置く用途。 */

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { ApiErrorBody, ResearchRequest } from "@/types/research";
+import type { ApiErrorBody, ResearchMode, ResearchRequest } from "@/types/research";
 import {
   loadAnswers,
   loadGoal,
@@ -11,6 +11,14 @@ import {
   saveError,
   saveResult,
 } from "@/lib/researchSession";
+
+// 実測（README.md参照）: eco はPass1+Pass2合計で1分前後、normal（3段階オーケストレーション
+// +Pass2）はさらに長くなりうる。実測より短い固定値を表示すると「フリーズした？」という
+// 不安を招くため、モードごとに違う目安文言を出す。
+const WAIT_HINT: Record<ResearchMode, string> = {
+  eco: "だいたい1分くらいで終わります",
+  normal: "じっくり調べるモードのため、1〜2分ほどかかることがあります",
+};
 
 const LOG_LINES = [
   "実際の制度・相場を確認しています",
@@ -25,6 +33,7 @@ export default function ResearchingPage() {
   const startedRef = useRef(false);
   const [activeLine, setActiveLine] = useState(0);
   const [done, setDone] = useState(false);
+  const [mode, setMode] = useState<ResearchMode>("normal");
 
   useEffect(() => {
     if (done) return;
@@ -46,6 +55,9 @@ export default function ResearchingPage() {
     }
     const answers = loadAnswers();
     const mode = loadMode();
+    // sessionStorage (外部ストア) からの初期読み込みのため、effect内でのsetStateは意図的。
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMode(mode);
 
     const body: ResearchRequest = { profile, goal, answers, mode };
 
@@ -103,7 +115,7 @@ export default function ResearchingPage() {
           );
         })}
       </div>
-      <p className="tiny">だいたい30秒くらいで終わります</p>
+      <p className="tiny">{WAIT_HINT[mode]}</p>
     </main>
   );
 }
