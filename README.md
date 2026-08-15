@@ -12,13 +12,13 @@
 ## 画面フロー
 
 ```
-[未認証] → Googleログイン (ホワイトリスト判定)
+[未認証] → Googleログイン
    ↓
 S01 入力 → S02 ヒアリング(AI動的生成) → S03 リサーチ中 → S04 比較結果
   (/)      (/interview)                  (/researching)     (/result)
 ```
 
-0. **ログイン** — `/`〜`/result` はログイン必須です。未認証の場合 `/login` へ誘導され、Googleアカウントでログインします。事前登録（`ALLOWED_EMAILS`）されたメールアドレス以外は利用できません。
+0. **ログイン** — `/`〜`/result` はログイン必須です。未認証の場合 `/login` へ誘導され、Googleアカウントでログインします（利用者を特定のメールアドレスに絞るホワイトリストは設けていません）。
 1. **S01 入力** — 「やってみたいこと」（検討したい将来像）と、検討している方向性（転職 or 独立）のみを入力します（UI案準拠。職種・経験年数・年収などの基本情報はここでは尋ねません）。
 2. **S02 ヒアリング** — `POST /api/interview` を呼び出し、S01の入力をもとにOrcaRouterが最大4問の追加質問を**1回だけ**生成します。現在の職種・資金面などの基本情報もこの中で優先的に質問されます。回答ごとの逐次質問生成（多段ヒアリング）は行いません。
 3. **S03 リサーチ中** — `POST /api/research` を呼び出し、OrcaRouter経由でリサーチ結果を取得します（内部では基礎調査→詳細生成の2段階。基礎調査は`mode`により単一呼び出し/複数段オーケストレーションを切り替え、後述）。
@@ -49,7 +49,7 @@ npm install
 
 # 2. 環境変数ファイルを作成
 cp .env.example .env.local
-# .env.local を編集し、ORCAROUTER_API_KEY / GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / AUTH_SECRET / ALLOWED_EMAILS を設定する
+# .env.local を編集し、ORCAROUTER_API_KEY / GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / AUTH_SECRET を設定する
 # AUTH_SECRET は `npx auth secret` または `openssl rand -base64 32` で生成できます
 
 # 3. 開発サーバーを起動
@@ -57,7 +57,7 @@ npm run dev
 ```
 
 [http://localhost:3000](http://localhost:3000) を開くと未ログインの場合は `/login` へリダイレクトされます。
-`ALLOWED_EMAILS` に登録したGoogleアカウントでログインすると S01 入力画面が表示されます。
+Googleアカウントでログインすると S01 入力画面が表示されます。
 
 `ORCAROUTER_API_KEY` を設定していない状態では `POST /api/interview` の時点でエラーになります
 （サーバー起動時ではなく、リクエスト時にエラーとなります）。
@@ -93,7 +93,6 @@ curl http://localhost:3000/api/health
 | `ORCAROUTER_WEB_SEARCH` | - | `true` にするとPass1（基礎調査）に `web_search_options` を付与しWeb Searchを有効化します。未設定時は `false`。 |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | ✅ | Google Cloud ConsoleでのOAuthクライアント情報。 |
 | `AUTH_SECRET` | ✅ | Auth.jsのセッション署名用シークレット。 |
-| `ALLOWED_EMAILS` | ✅ | ログインを許可するGoogleアカウントのメールアドレス（カンマ区切り、サーバー側のみ参照）。 |
 | `RATE_LIMIT_PER_MINUTE` | - | ユーザー単位Rate Limitの上限（回/分）。未設定時は `10`。 |
 
 ### リサーチ生成のTwo-passアーキテクチャ（設計書9.5章 + UI案対応）
@@ -109,10 +108,9 @@ UI案の「今のまま＋3つの道」比較・年次推移・条件シミュ�
 
 実測（`gpt-4o-mini-search-preview` + `gpt-4o-mini`、`mode: "eco"`）: Pass1 約7〜9秒、Pass2 約50〜65秒、合計1分前後。`mode: "normal"` はエージェント型検索が最大約280秒かかるケースがあるため、`app/api/research/route.ts` は `maxDuration = 300` を設定しています（**VercelのFluid Computeが有効であることが前提**。Hobbyプランの通常60秒上限のままだと本番でタイムアウトするため、デプロイ前に必ず確認してください）。モデル選択・1回あたりのコスト試算（現状/推奨/最高性能の3グレード）は [`docs/api-cost.md`](./docs/api-cost.md) にまとめています。
 
-## 認証・認可・API乱用防止（設計書v0.4 14章）
+## 認証・API乱用防止
 
-- **認証**: Google OpenID Connectを [Auth.js](https://authjs.dev)（`next-auth@5`）で実装（[`auth.ts`](./auth.ts)）。スコープは `openid email profile` の最小構成。
-- **認可（ホワイトリスト）**: `signIn` コールバックで `email_verified=true` かつ `ALLOWED_EMAILS` に含まれるメールアドレスのみログインを許可します（[`lib/allowedEmails.ts`](./lib/allowedEmails.ts)）。対象外のGoogleアカウントは `/login?error=AccessDenied` に戻されます。
+- **認証**: Google OpenID Connectを [Auth.js](https://authjs.dev)（`next-auth@5`）で実装（[`auth.ts`](./auth.ts)）。スコープは `openid email profile` の最小構成。`signIn` コールバックは `email_verified=true` のみを条件とし、利用者を特定のメールアドレスに絞るホワイトリストは設けていません（2026-08-16、旧`ALLOWED_EMAILS`は廃止）。
 - **画面保護**: [`proxy.ts`](./proxy.ts)（Next.js 16の Proxy、旧Middleware）が `/` `/interview` `/researching` `/result` への未認証アクセスを `/login` へリダイレクトします。JWTセッションのcookie検証のみで完結するため、DBアクセスを伴わない「optimistic check」の範囲で実装しています。
 - **APIのサーバー側セッション検証**: 画面のログイン状態だけに依存せず、`POST /api/interview` と `POST /api/research` は [`lib/apiGuard.ts`](./lib/apiGuard.ts) の `requireAuthorizedUser()` で毎リクエスト検証します。未認証は `401 unauthorized`、ホワイトリスト対象外は `403 forbidden` を返します。
 - **API乱用防止（ユーザー単位Rate Limit）**: [`lib/rateLimit.ts`](./lib/rateLimit.ts) が、ログイン済みメールアドレスをキーに `/api/interview` と `/api/research` をまとめて1つの固定ウィンドウ（既定 10回/分）で制限し、超過時は `429 app_rate_limited` を返します。
@@ -179,8 +177,7 @@ lib/
   jsonNormalize.ts             # モデル出力のnull正規化 (stripNullValues)
   tuneMath.ts                  # 条件シミュレーションの近似再計算ロジック
   citations.tsx                # 出典番号参照の表示ヘルパー (Cite/Cites/CiteIn)
-  allowedEmails.ts             # ALLOWED_EMAILS ホワイトリスト判定
-  apiGuard.ts                  # API向け 認証・認可・Rate Limit ガード
+  apiGuard.ts                  # API向け 認証・Rate Limit ガード
   rateLimit.ts                 # ユーザー単位 Rate Limit (Fixed Window)
   researchSession.ts           # 画面間の一時状態受け渡し (sessionStorage、DBなし)
   errors.ts                    # アプリケーションエラー定義
@@ -227,12 +224,11 @@ demo/champion.html            # 発表用チャンピオンデータ（UI案 lif
    | `GOOGLE_CLIENT_ID` | `<google oauth client id>` |
    | `GOOGLE_CLIENT_SECRET` | `<secret>`（Sensitive） |
    | `AUTH_SECRET` | `<secret>`（Sensitive） |
-   | `ALLOWED_EMAILS` | `user1@gmail.com,user2@gmail.com` |
    | `RATE_LIMIT_PER_MINUTE` | `10` |
 
    `POST /api/research` は `maxDuration = 120` を設定しています。Vercel Hobbyプランは通常60秒上限ですが、Fluid Compute有効時は300秒まで動作します。
 
-5. Production Deployment の公開URL（`https://<project>.vercel.app`）が審査・デモ用URLになる。公開URL自体はインターネットから到達可能だが、利用には`ALLOWED_EMAILS`登録済みのGoogleアカウントでのログインが必須（設計書20.2章）。
+5. Production Deployment の公開URL（`https://<project>.vercel.app`）が審査・デモ用URLになる。利用にはGoogleアカウントでのログインが必須（メールアドレスによる利用者制限はなし）。
 6. Live API障害時にチャンピオンデータへ自動フォールバックする処理は実装しない（設計書20.6章）。発表用チャンピオンHTML（`demo/champion.html`）はLive APIの成否に依存しない別成果物として使用する。
 
 ## 既知の制約・未確定事項

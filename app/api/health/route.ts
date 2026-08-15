@@ -13,10 +13,6 @@ export async function GET() {
   const auth = {
     googleConfigured: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
     authSecretConfigured: Boolean(process.env.AUTH_SECRET),
-    allowedEmailCount: (process.env.ALLOWED_EMAILS ?? "")
-      .split(",")
-      .map((e) => e.trim())
-      .filter(Boolean).length,
   };
 
   return NextResponse.json({
