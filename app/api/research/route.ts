@@ -8,7 +8,7 @@ import {
   requestResearchCompletion,
   routerDebugHeaders,
 } from "@/lib/OrcaRouterClient";
-import { runOrchestratedFactFinding } from "@/lib/researchOrchestrator";
+import { runAgenticFactFinding } from "@/lib/researchAgent";
 import { validateResearchResult } from "@/lib/ResultValidator";
 import { validateFactFindingResponse } from "@/lib/FactFindingValidator";
 import type { FactFindingResponse } from "@/types/factFinding";
@@ -16,9 +16,13 @@ import { ResearchError, toErrorResponse } from "@/lib/errors";
 import { requireAuthorizedUser } from "@/lib/apiGuard";
 
 export const runtime = "nodejs";
-// Pass1(基礎調査) + Pass2(詳細生成、リトライ含む) の合計で90秒前後かかりうるため長めに確保する。
-// Vercel Hobbyプランは通常60秒上限だが、Fluid Compute有効時は300秒まで設定できる。
-export const maxDuration = 120;
+// mode: "normal" のPass1（lib/researchAgent.ts、エージェント型検索）は実測で
+// 最大4サイクル・約280秒かかるケースがある（docs/pass1-agentic-search-design.md 5章）。
+// Pass2（詳細生成・リトライ含む）を加えると120秒では収まらないため300秒に引き上げる。
+// これはVercelのFluid Compute（Hobbyプランの通常60秒上限を超える設定）が有効な前提。
+// 未確認・未設定の場合は本番でタイムアウトするため、デプロイ前にVercelのプロジェクト設定
+// （Fluid Compute有効化）を必ず確認すること。
+export const maxDuration = 300;
 
 /**
  * POST /api/research
@@ -99,10 +103,13 @@ export async function POST(request: Request) {
  * ORCAROUTER_FACT_MODEL 未設定、タイムアウト、検証失敗など、いかなる理由でも
  * 例外を外へ投げず、詳細生成 (Pass2) は facts なしで続行できるようにする。
  *
- * mode によって構成を切り替える（設計・実測は docs/api-cost.md 参照）:
+ * mode によって構成を切り替える（設計・実測は docs/pass1-agentic-search-design.md 参照）:
  * - "eco": 単一のAPI呼び出しに任せる（低コスト、カバレッジは不安定）。
- * - "normal": lib/researchOrchestrator.ts の3段階オーケストレーション
- *   （候補生成→個別グラウンディング→深掘り）で複数回に分けて検索する。
+ * - "normal": lib/researchAgent.ts のエージェント型検索（このエンドポイント内で完結する
+ *   簡易版、MAX_CYCLES=3・数分で終わる想定）。クライアント（app/researching/page.tsx）は
+ *   ユーザー指定の下限（実クエリ数約100回相当）を満たすため、この簡易版ではなく
+ *   POST /api/research/step のポーリングを使う。このエンドポイントのnormalモードは
+ *   API単体利用時の後方互換として残している。
  */
 async function runFactFindingBestEffort(
   request: Pick<ResearchRequest, "profile" | "goal" | "mode">,
@@ -121,7 +128,7 @@ async function runFactFindingBestEffort(
   }
 
   try {
-    return await runOrchestratedFactFinding(request);
+    return await runAgenticFactFinding(request);
   } catch {
     return undefined;
   }

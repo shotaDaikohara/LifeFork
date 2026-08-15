@@ -256,17 +256,47 @@ export const summarySchema = z.object({
 });
 export type Summary = z.infer<typeof summarySchema>;
 
-export const researchResultSchema = z.object({
-  summary: summarySchema,
-  currentPath: currentPathSchema,
-  // UI案は「今のまま」+ 進める道3つ(A/B/C)固定で構成される。
-  targetPaths: z.array(targetPathSchema).length(3),
-  checks: z.array(checkItemSchema).min(3).max(8),
-  // 条件シミュレーション（確率バー）全体の主な根拠（UI案 D.rateSrc、単一・省略可）。
-  rateSourceIndex: sourceIndexSchema.optional(),
-  sources: z.array(sourceSchema).default([]),
-  limitations: z.array(z.string()).default([]),
-});
+export const researchResultSchema = z
+  .object({
+    summary: summarySchema,
+    currentPath: currentPathSchema,
+    // UI案は「今のまま」+ 進める道3つ(A/B/C)固定で構成される。
+    targetPaths: z.array(targetPathSchema).length(3),
+    checks: z.array(checkItemSchema).min(3).max(8),
+    // 条件シミュレーション（確率バー）全体の主な根拠（UI案 D.rateSrc、単一・省略可）。
+    rateSourceIndex: sourceIndexSchema.optional(),
+    sources: z.array(sourceSchema).default([]),
+    limitations: z.array(z.string()).default([]),
+  })
+  // sourceIndex は「sources 配列の何番目か（1始まり）」という約束のため、
+  // sources.length を超える番号（存在しない出典への参照）は単体の sourceIndexSchema では検知できない。
+  // 2026-08-15: 実測でこの不整合（sources 4件に対し sourceIndex 5〜7 を参照）が実際に発生することを確認したため、
+  // 横断検証として追加した。既存のPass2リトライ機構（route.ts の retryHint）がこのエラーメッセージを使って
+  // 自動的に再生成を促せるよう、フィールドパスと不正な値を明示するメッセージにしている。
+  .superRefine((result, ctx) => {
+    const max = result.sources.length;
+    const checkIndex = (value: number | undefined, path: (string | number)[]) => {
+      if (value !== undefined && value > max) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path,
+          message: `sourceIndex ${value} は sources 配列の範囲外です（sources は ${max} 件しかありません）。存在する番号のみ指定するか、省略してください。`,
+        });
+      }
+    };
+
+    checkIndex(result.currentPath.sourceIndex, ["currentPath", "sourceIndex"]);
+    checkIndex(result.rateSourceIndex, ["rateSourceIndex"]);
+    result.summary.leadSourceIndexes.forEach((idx, i) =>
+      checkIndex(idx, ["summary", "leadSourceIndexes", i]),
+    );
+    checkIndex(result.summary.fitScore.sourceIndex, ["summary", "fitScore", "sourceIndex"]);
+    checkIndex(result.summary.availableFunds.sourceIndex, ["summary", "availableFunds", "sourceIndex"]);
+    checkIndex(result.summary.survivalPeriod.sourceIndex, ["summary", "survivalPeriod", "sourceIndex"]);
+    checkIndex(result.summary.relevantExperience.sourceIndex, ["summary", "relevantExperience", "sourceIndex"]);
+    result.targetPaths.forEach((p, i) => checkIndex(p.sourceIndex, ["targetPaths", i, "sourceIndex"]));
+    result.checks.forEach((c, i) => checkIndex(c.sourceIndex, ["checks", i, "sourceIndex"]));
+  });
 export type ResearchResult = z.infer<typeof researchResultSchema>;
 
 // ---------------------------------------------------------------------------

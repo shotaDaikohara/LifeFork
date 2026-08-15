@@ -55,6 +55,8 @@ LifeFork の価値は、単に「進むか・進まないか」を判定する�
 - 根拠が推測・一般論であり特定の情報源に基づかない場合は、無理に番号を付けず省略すること。
 - `targetPaths[].sourceIndex` はそのパス全体（`detail`・`plan`・`yearlyScenes` 等）を通じた主要な根拠1件を表す想定です。複数の根拠がある場合は最も重要な1件を選んでください。
 - `rateSourceIndex` は条件シミュレーション（`tuneFactors` に基づく実現しやすさの目安全体）の主な根拠です。
+- **3本の`targetPaths`が異なる手段（例: 自己資金／第三者承継／雇われて学ぶ）を扱う場合、それぞれの根拠は本来別の情報源であることが多いはずです。** `researchedSources` の中から、各パスの内容に実際に対応する項目をパスごとに選び分けてください。3本すべてが同じ`sourceIndex`になっている場合は、本当に同じ出典に基づいているか、それとも選び分けを怠っていないかを見直してください。
+- `researchedSources` に複数の情報源が渡されている場合、それらをなるべく幅広く使ってください。全体を通して1つの情報源だけを使い回すのではなく、各フィールドの内容に実際に対応する情報源をそれぞれ選ぶこと。
 
 ## 各フィールドの生成方針
 
@@ -139,7 +141,7 @@ LifeFork の価値は、単に「進むか・進まないか」を判定する�
     "headline": "string",
     "lead": "string",
     "leadSourceIndexes": [1],
-    "fitScore": { "label": "いま向いてる度", "value": 0, "unit": "/100", "sourceIndex": 1 },
+    "fitScore": { "label": "いま向いてる度", "value": 0, "unit": "/100", "sourceIndex": 2 },
     "availableFunds": { "label": "準備できるお金", "value": 0, "unit": "万円" },
     "survivalPeriod": { "label": "生活できる期間", "value": 0, "unit": "か月" },
     "relevantExperience": { "label": "string", "value": 0, "unit": "年" }
@@ -156,7 +158,7 @@ LifeFork の価値は、単に「進むか・進まないか」を判定する�
       "y5": { "headline": "string", "narrative": "string", "stats": [{ "label": "string", "value": "string" }] }
     },
     "series": { "income": [0,0,0,0], "savings": [0,0,0,0], "dreamCloseness": [0,0,0,0], "satisfaction": [0,0,0,0] },
-    "sourceIndex": 1
+    "sourceIndex": 3
   },
   "targetPaths": [
     {
@@ -175,11 +177,13 @@ LifeFork の価値は、単に「進むか・進まないか」を判定する�
       "tuneFactors": { "base": 0, "savingsSensitivity": 0, "prepMonthsSensitivity": 0, "weeklyHoursSensitivity": 0, "relocationSensitivity": 0 },
       "firstStep": { "headline": "string", "body": "string" },
       "plan": [{ "period": "1〜2か月", "title": "string", "detail": "string" }],
-      "sourceIndex": 1
+      "sourceIndex": 4
     }
+    // ... "b", "c" も同様の構造。3本の内容がそれぞれ異なる情報源に基づく場合、
+    // sourceIndexも3本それぞれ別の値になるのが自然です（例のように毎回同じ数値を使い回さないこと）。
   ],
-  "checks": [{ "status": "ok|ng", "title": "string", "detail": "string", "sourceIndex": 1 }],
-  "rateSourceIndex": 1,
+  "checks": [{ "status": "ok|ng", "title": "string", "detail": "string", "sourceIndex": 5 }],
+  "rateSourceIndex": 6,
   "sources": [{ "title": "string", "url": "string" }],
   "limitations": ["string"]
 }

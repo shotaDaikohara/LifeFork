@@ -104,10 +104,10 @@ UI案の「今のまま＋3つの道」比較・年次推移・条件シミュ�
 
 1. **Pass1（基礎調査）**: Web Search対応の `ORCAROUTER_FACT_MODEL` で、関連する事実・相場・参考URLを取得します（[`prompts/research_facts.md`](./prompts/research_facts.md)）。ベストエフォートで、未設定・失敗時は空のまま次に進みます。**実装は `mode`（リクエストの `mode: "eco" | "normal"`）で切り替わります**（設計・実測の詳細は [`docs/api-cost.md`](./docs/api-cost.md) 参照）。
    - `mode: "eco"`: 1回のAPI呼び出しにまとめて任せます。低コストですが、複数の観点（ベースラインの事実／代替ルートの実在探索）を1回で安定して網羅できるとは限りません。
-   - `mode: "normal"`: [`lib/researchOrchestrator.ts`](./lib/researchOrchestrator.ts) が3段階のオーケストレーションを行います。①候補生成（`goal.type`に応じた代替ルート候補を最大6件、Web検索なしで発想）→②個別グラウンディング（ベースライン＋候補ごとに1件、並列でWeb検索し実在を確認。出典が付かない候補は脱落）→③深掘り（グラウンディングに成功した候補のうち情報源が多い上位3件について、具体的な金額・要件を追加取得）。実測で10〜11回のAPI呼び出し・15〜17秒。
+   - `mode: "normal"`: [`lib/researchAgent.ts`](./lib/researchAgent.ts) がエージェント型検索を行います。`Responses API` の `web_search` ツールを使い、検索回数（何を・何回調べるか）をアプリ側で固定せずモデル自身に委ねます。検索ターン（Web Search可）と自己判定ターン（Web Searchなし・構造化出力のみ）を交互に呼び、モデルが「もう十分か」を自己判定して停止します。実測で検索実行2〜5回・API呼び出し5〜11回（上限3サイクル、詳細・実測根拠は [`docs/pass1-agentic-search-design.md`](./docs/pass1-agentic-search-design.md) 参照）。
 2. **Pass2（詳細生成）**: Pass1の結果を [`lib/PromptBuilder.ts`](./lib/PromptBuilder.ts) 経由でプロンプトに埋め込み、Web Searchなしの通常モデル（`mode: "eco"` は `ORCAROUTER_MODEL`、`mode: "normal"` は `ORCAROUTER_MODEL_AUTO`）で `ResearchResult` 全体を生成します。出力トークン上限の制約を受けないため、情報量の多いJSONも最後まで生成できます。
 
-実測（`gpt-4o-mini-search-preview` + `gpt-4o-mini`、`mode: "eco"`）: Pass1 約7〜9秒、Pass2 約50〜65秒、合計1分前後。`app/api/research/route.ts` は `maxDuration = 120` を設定しています（VercelはHobbyプランでも Fluid Compute 有効時は最大300秒まで設定可能）。モデル選択・1回あたりのコスト試算（現状/推奨/最高性能の3グレード）は [`docs/api-cost.md`](./docs/api-cost.md) にまとめています。
+実測（`gpt-4o-mini-search-preview` + `gpt-4o-mini`、`mode: "eco"`）: Pass1 約7〜9秒、Pass2 約50〜65秒、合計1分前後。`mode: "normal"` はエージェント型検索が最大約280秒かかるケースがあるため、`app/api/research/route.ts` は `maxDuration = 300` を設定しています（**VercelのFluid Computeが有効であることが前提**。Hobbyプランの通常60秒上限のままだと本番でタイムアウトするため、デプロイ前に必ず確認してください）。モデル選択・1回あたりのコスト試算（現状/推奨/最高性能の3グレード）は [`docs/api-cost.md`](./docs/api-cost.md) にまとめています。
 
 ## 認証・認可・API乱用防止（設計書v0.4 14章）
 
@@ -172,7 +172,7 @@ components/
 lib/
   OrcaRouterClient.ts          # OrcaRouter (OpenAI互換API) 呼び出し (interview/research Pass1・Pass2共通)
   PromptBuilder.ts             # システムプロンプト + ユーザー入力の組み立て (Pass1/Pass2)
-  researchOrchestrator.ts      # Pass1 (mode: "normal") の3段階オーケストレーション
+  researchAgent.ts             # Pass1 (mode: "normal") のエージェント型検索（検索ターン+自己判定ターンのループ）
   InterviewValidator.ts        # InterviewResponse のスキーマ検証
   ResultValidator.ts           # ResearchResult のスキーマ検証
   FactFindingValidator.ts      # Pass1 (基礎調査、mode: "eco") レスポンスのスキーマ検証
@@ -187,16 +187,15 @@ lib/
 prompts/
   interview_system.md          # ヒアリング質問生成プロンプト（外部ファイル管理）
   research_system.md           # 詳細生成 (Pass2) 用システムプロンプト（外部ファイル管理）
-  research_facts.md            # 基礎調査 (Pass1, mode: "eco") 用システムプロンプト（外部ファイル管理）
-  research_candidates.md       # Pass1オーケストレーション ステージ1(候補生成)用プロンプト
-  research_grounding.md        # Pass1オーケストレーション ステージ2/3(個別グラウンディング・深掘り)用プロンプト
+  research_facts.md            # 基礎調査 (Pass1) 用システムプロンプト（エージェント型検索の初回ターンでも使用）
 types/
   interview.ts                  # InterviewQuestion等のドメイン型
   research.ts                   # ResearchResult等のドメイン型 (zodスキーマが単一の情報源)
   factFinding.ts                # Pass1 (基礎調査) レスポンスの型
-  researchCandidates.ts         # Pass1オーケストレーション ステージ1(候補生成)の型
+  agenticSearch.ts              # Pass1エージェント型検索 (mode: "normal") の自己判定ターンの型
 docs/
   api-cost.md                   # 利用モデル・切り替え方法・1回あたりのコスト試算(現状/推奨/最高性能)
+  pass1-agentic-search-design.md # Pass1エージェント型検索の設計・実測根拠
 demo/champion.html            # 発表用チャンピオンデータ（UI案 lifefork_demo.html を採用、Liveシステムと分離）
 ```
 

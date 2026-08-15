@@ -14,16 +14,6 @@ const RESEARCH_FACTS_PROMPT_PATH = path.join(
   "prompts",
   "research_facts.md",
 );
-const RESEARCH_CANDIDATES_PROMPT_PATH = path.join(
-  process.cwd(),
-  "prompts",
-  "research_candidates.md",
-);
-const RESEARCH_GROUNDING_PROMPT_PATH = path.join(
-  process.cwd(),
-  "prompts",
-  "research_grounding.md",
-);
 const INTERVIEW_SYSTEM_PROMPT_PATH = path.join(
   process.cwd(),
   "prompts",
@@ -76,61 +66,6 @@ export async function buildFactFindingPrompt(
 
   const user = [
     "以下はユーザー入力です。この内容に関連する事実をWeb検索で調べ、FactFinding の JSON を生成してください。",
-    "",
-    "```json",
-    JSON.stringify(userPayload, null, 2),
-    "```",
-  ].join("\n");
-
-  return { system, user };
-}
-
-/**
- * prompts/research_candidates.md を読み込み、プロフィール・将来像と結合する
- * （Pass1オーケストレーション ステージ1: 候補生成、Web検索なし）。
- * 設計・実測の詳細は docs/api-cost.md 参照。
- */
-export async function buildCandidatesPrompt(
-  request: Pick<ResearchRequest, "profile" | "goal">,
-): Promise<BuiltPrompt> {
-  const system = await readFile(RESEARCH_CANDIDATES_PROMPT_PATH, "utf-8");
-
-  const userPayload = {
-    profile: request.profile,
-    goal: request.goal,
-  };
-
-  const user = [
-    "以下はユーザー入力です。この内容に基づいて代替ルートの候補ラベルを発想し、ResearchCandidates の JSON を生成してください。",
-    "",
-    "```json",
-    JSON.stringify(userPayload, null, 2),
-    "```",
-  ].join("\n");
-
-  return { system, user };
-}
-
-/**
- * prompts/research_grounding.md を読み込み、プロフィール・将来像と単一トピックを結合する
- * （Pass1オーケストレーション ステージ2/3: 個別グラウンディング・深掘り、Web検索あり）。
- *
- * @param topic 今回調べる単一のトピック・質問文（候補ラベルや深掘り用の具体的な問い）。
- */
-export async function buildGroundingPrompt(
-  request: Pick<ResearchRequest, "profile" | "goal">,
-  topic: string,
-): Promise<BuiltPrompt> {
-  const system = await readFile(RESEARCH_GROUNDING_PROMPT_PATH, "utf-8");
-
-  const userPayload = {
-    profile: request.profile,
-    goal: request.goal,
-    topic,
-  };
-
-  const user = [
-    "以下はユーザー入力と、今回調べるべきトピックです。topic についてのみ調べ、FactFinding の JSON を生成してください。",
     "",
     "```json",
     JSON.stringify(userPayload, null, 2),

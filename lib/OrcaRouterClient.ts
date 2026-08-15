@@ -2,8 +2,8 @@ import OpenAI from "openai";
 import { z } from "zod";
 import { researchResultSchema } from "@/types/research";
 import { interviewResponseSchema } from "@/types/interview";
-import { factFindingResponseSchema, topicFindingResponseSchema } from "@/types/factFinding";
-import { researchCandidatesSchema } from "@/types/researchCandidates";
+import { factFindingResponseSchema, mergedFactFindingSchema, type MergedFactFinding } from "@/types/factFinding";
+import { agenticJudgmentSchema, type AgenticJudgment } from "@/types/agenticSearch";
 import { ResearchError } from "@/lib/errors";
 
 /**
@@ -28,9 +28,15 @@ const DEFAULT_TIMEOUT_MS = 45_000;
 // Pass1(基礎調査)は軽量出力想定のため短めに設定し、Vercel maxDuration(60s)内で
 // Pass1 + Pass2 の合計が収まるようにする。
 const DEFAULT_FACT_TIMEOUT_MS = 15_000;
-// Pass1オーケストレーション（mode: "normal"、lib/researchOrchestrator.ts）の
-// ステージ2/3は1トピックだけを扱う軽量呼び出しのため、さらに短く・並列実行前提で設定する。
-const DEFAULT_GROUNDING_TIMEOUT_MS = 12_000;
+// Pass1 エージェント型検索（mode: "normal"、lib/researchAgent.ts）の検索ターン。
+// 実測(docs/pass1-agentic-search-design.md 5章)で1ターン最大110秒程度かかるケースがあるため、
+// 通常のFACT_TIMEOUTより長めに確保する。
+const DEFAULT_AGENTIC_SEARCH_TIMEOUT_MS = 120_000;
+// 自己判定ターンはWeb Searchを行わないが、判定基準を厳格化（7項目のチェック、
+// 会話履歴も長くなる）した結果、実測でサイクルが進むほど60秒を超えてタイムアウトする
+// ケースが確認された（cycle6で発生）。抽出ターン（最大40件のfacts生成）も同じ関数を
+// 共用するため、両者を賄える値に余裕を持たせている。
+const DEFAULT_AGENTIC_JUDGMENT_TIMEOUT_MS = 120_000;
 
 function getEnv() {
   const apiKey = process.env.ORCAROUTER_API_KEY;
@@ -49,11 +55,32 @@ function getEnv() {
   const modelAuto = process.env.ORCAROUTER_MODEL_AUTO || DEFAULT_MODEL;
   const timeoutMs = Number(process.env.ORCAROUTER_TIMEOUT_MS) || DEFAULT_TIMEOUT_MS;
   const factTimeoutMs = Number(process.env.ORCAROUTER_FACT_TIMEOUT_MS) || DEFAULT_FACT_TIMEOUT_MS;
-  const groundingTimeoutMs = Number(process.env.ORCAROUTER_GROUNDING_TIMEOUT_MS) || DEFAULT_GROUNDING_TIMEOUT_MS;
+  // Pass1 エージェント型検索（lib/researchAgent.ts）専用モデル。ORCAROUTER_FACT_MODEL
+  // （既定: gpt-4o-mini-search-preview、Chat Completions + web_search_options 前提）は
+  // Responses API 自体に対応していない（2026-08-15 実測: 400 "not supported with the
+  // Responses API"）。そのため Responses API の web_search ツールに対応したモデルを
+  // 別env varで指定する。docs/pass1-agentic-search-design.md 参照。
+  const agenticModel = process.env.ORCAROUTER_AGENTIC_MODEL || "openai/gpt-5.1";
+  const agenticSearchTimeoutMs =
+    Number(process.env.ORCAROUTER_AGENTIC_SEARCH_TIMEOUT_MS) || DEFAULT_AGENTIC_SEARCH_TIMEOUT_MS;
+  const agenticJudgmentTimeoutMs =
+    Number(process.env.ORCAROUTER_AGENTIC_JUDGMENT_TIMEOUT_MS) || DEFAULT_AGENTIC_JUDGMENT_TIMEOUT_MS;
   // 設計書9.5章: Web Searchの実発火をモデル/ルートごとに確認したうえで有効化する。
   // 対応が未確認のモデルではデフォルトで無効。
   const webSearchEnabled = process.env.ORCAROUTER_WEB_SEARCH === "true";
-  return { apiKey, baseURL, model, factModel, modelAuto, timeoutMs, factTimeoutMs, groundingTimeoutMs, webSearchEnabled };
+  return {
+    apiKey,
+    baseURL,
+    model,
+    factModel,
+    modelAuto,
+    timeoutMs,
+    factTimeoutMs,
+    agenticModel,
+    agenticSearchTimeoutMs,
+    agenticJudgmentTimeoutMs,
+    webSearchEnabled,
+  };
 }
 
 /**
@@ -123,8 +150,8 @@ function toJsonSchema(schema: z.core.$ZodType): Record<string, unknown> {
 const researchResultJsonSchema = toJsonSchema(researchResultSchema);
 const interviewResponseJsonSchema = toJsonSchema(interviewResponseSchema);
 const factFindingJsonSchema = toJsonSchema(factFindingResponseSchema);
-const researchCandidatesJsonSchema = toJsonSchema(researchCandidatesSchema);
-const topicFindingJsonSchema = toJsonSchema(topicFindingResponseSchema);
+const agenticJudgmentJsonSchema = toJsonSchema(agenticJudgmentSchema);
+const mergedFactFindingJsonSchema = toJsonSchema(mergedFactFindingSchema);
 
 export interface ChatMessages {
   system: string;
@@ -285,48 +312,164 @@ export async function requestFactFindingCompletion(messages: ChatMessages): Prom
   });
 }
 
-/**
- * OrcaRouter へ Pass1オーケストレーション ステージ1（候補生成）を依頼する。
- * Web検索は行わない（`useWebSearch: false`）。`ORCAROUTER_FACT_MODEL` を流用するが
- * 検索なしのため実質どのモデルでもよい（設計は docs/api-cost.md 参照）。
- */
-export async function requestCandidatesCompletion(messages: ChatMessages): Promise<CompletionResult> {
-  const { factModel, factTimeoutMs } = getEnv();
-  if (!factModel) {
-    throw new ResearchError(
-      "internal_error",
-      "ORCAROUTER_FACT_MODEL が設定されていません。",
-    );
-  }
-  return requestStructuredCompletion(messages, {
-    schemaName: "research_candidates",
-    jsonSchema: researchCandidatesJsonSchema,
-    useWebSearch: false,
-    model: factModel,
-    timeoutMs: factTimeoutMs,
-  });
+// ---------------------------------------------------------------------------
+// Pass1 エージェント型検索（mode: "normal"、lib/researchAgent.ts）
+//
+// Chat Completions の web_search_options（1呼び出し=実質1クエリ、アプリ側が検索回数を
+// 事前に固定設計する必要がある）から、Responses API の web_search ツール
+// （モデル自身が1呼び出し内で必要な分だけ反復的に検索する）へ移行した。
+// 検索回数の設計をアプリ側の人力からモデル自身の判断へ移す狙い。
+// 設計・実測根拠: docs/pass1-agentic-search-design.md
+// ---------------------------------------------------------------------------
+
+export interface AgenticSearchTurnResult {
+  responseId: string;
+  outputText: string;
+  /** `web_search_call`アイテムの個数（イベント数）。実クエリ数ではないので検索回数の指標には使わないこと。 */
+  searchCallCount: number;
+  /**
+   * 実際に実行された検索クエリ数（`tool_usage.web_search.num_requests`、公式フィールド）。
+   * 1つの`web_search_call`イベントが複数クエリを内包しうるため（実測で平均4件/イベント）、
+   * 検索回数を計測・報告する際は必ずこちらを使うこと（docs/pass1-agentic-search-design.md 7章）。
+   */
+  numRequests: number;
 }
 
 /**
- * OrcaRouter へ Pass1オーケストレーション ステージ2/3（個別グラウンディング・深掘り）を
- * 依頼する。1トピックだけを扱う軽量呼び出しで、`lib/researchOrchestrator.ts` から
- * 複数トピック分を並列に呼び出される想定のため、タイムアウトを短めに設定する。
+ * 検索ターン（Web Search可）。初回は `instructions`（research_facts.md 相当の方針）と
+ * `input`（ユーザー入力）を渡す。2ターン目以降は `previousResponseId` で会話を継続し、
+ * `instructions` は省略する（前ターンまでの会話履歴に含まれるため）。
+ * 1回のAPI呼び出し内で何回検索するかはモデルに委ね、アプリ側では固定しない。
  */
-export async function requestGroundingCompletion(messages: ChatMessages): Promise<CompletionResult> {
-  const { factModel, groundingTimeoutMs } = getEnv();
-  if (!factModel) {
-    throw new ResearchError(
-      "internal_error",
-      "ORCAROUTER_FACT_MODEL が設定されていません。",
+export async function requestAgenticSearchTurn(params: {
+  instructions?: string;
+  input: string;
+  previousResponseId?: string;
+}): Promise<AgenticSearchTurnResult> {
+  const { agenticModel, agenticSearchTimeoutMs } = getEnv();
+  const openai = getClient();
+  try {
+    const res = await openai.responses.create(
+      {
+        model: agenticModel,
+        instructions: params.instructions,
+        input: params.input,
+        tools: [{ type: "web_search" }],
+        previous_response_id: params.previousResponseId,
+      },
+      { timeout: agenticSearchTimeoutMs },
     );
+    const searchCallCount = (res.output ?? []).filter(
+      (item) => (item as { type?: string }).type === "web_search_call",
+    ).length;
+    const numRequests =
+      (res as unknown as { tool_usage?: { web_search?: { num_requests?: number } } }).tool_usage?.web_search
+        ?.num_requests ?? 0;
+    return { responseId: res.id, outputText: res.output_text ?? "", searchCallCount, numRequests };
+  } catch (err) {
+    throw toResearchError(err);
   }
-  return requestStructuredCompletion(messages, {
-    schemaName: "topic_finding",
-    jsonSchema: topicFindingJsonSchema,
-    useWebSearch: true,
-    model: factModel,
-    timeoutMs: groundingTimeoutMs,
-  });
+}
+
+/**
+ * 自己判定ターン（Web Searchなし・構造化出力のみ）。検索ターンと同じ呼び出しに
+ * 同居させると検索よりスキーマ充足が優先され検索が発火しなくなる問題が実測で
+ * 確認されているため、必ず別呼び出しに分離する（docs/pass1-agentic-search-design.md 3.2節）。
+ */
+export async function requestAgenticJudgmentTurn(params: {
+  previousResponseId: string;
+}): Promise<{ responseId: string; judgment: AgenticJudgment }> {
+  const { agenticModel, agenticJudgmentTimeoutMs } = getEnv();
+  const openai = getClient();
+  try {
+    const res = await openai.responses.create(
+      {
+        model: agenticModel,
+        input:
+          "ここまでの調査内容を振り返ってください。これは片手間の下調べではなく、" +
+          "人が実際に会社を辞める・住む場所を変えるといった人生の意思決定に使うための調査です。" +
+          "人間が本気で同じ調査をするなら、100回以上の検索・比較・裏取りを行うはずです。" +
+          "その水準に対して、本当に十分と言えますか？ 以下の観点を全て満たしているか、厳しく確認してください: " +
+          "(1) 検討すべき重要なカテゴリ（観点）が網羅されているか。" +
+          "(2) **各カテゴリについて、実例が最低1件ではなく、条件の異なる複数件（例:成功例と苦戦した例、" +
+          "都市部と地方、若年層と中高年など）揃っているか**。1件しかない実例は「まだ薄い」とみなすこと。" +
+          "(3) **金額・条件など重要な数値が、2つ以上の独立した情報源で相互に裏付けられているか**" +
+          "（1つの情報源にしか出てこない数字は未検証として扱う）。" +
+          "(4) **少なくとも3つ以上の異なる地域・自治体を具体的に比較できているか**" +
+          "（「地域差がある」という一般論ではなく、具体的な地域名ごとの制度・金額の違い）。" +
+          "(5) 収支シミュレーションについて、楽観的・標準的・悲観的な複数シナリオの数字があるか" +
+          "（単一の平均値だけでは不十分）。" +
+          "(6) 失敗・撤退した場合の具体的なリスクとその発生率・対処法まで調べられているか。" +
+          "(7) 1〜2年目だけでなく、3〜5年以上先の長期的な見通しまで調べられているか。" +
+          "1つでも満たしていない観点があれば不十分とみなし、missing_categories に、" +
+          "何が・どのレベルまで足りないかが分かる具体的な文言で列挙してください" +
+          "（例:「◯◯制度について、都市部以外の地域での実例をもう1件」のように、既にある情報との違いが" +
+          "わかる形にすること。同じ指摘の繰り返しにならないよう、前回までの調査で埋まった点は除くこと）。" +
+          "全てを満たしていれば十分です。十分なら missing_categories は空配列にしてください。",
+        previous_response_id: params.previousResponseId,
+        text: {
+          format: {
+            type: "json_schema",
+            name: "sufficiency_judgment",
+            schema: agenticJudgmentJsonSchema,
+            strict: true,
+          },
+        },
+      },
+      { timeout: agenticJudgmentTimeoutMs },
+    );
+    const judgment = agenticJudgmentSchema.parse(JSON.parse(res.output_text ?? "{}"));
+    return { responseId: res.id, judgment };
+  } catch (err) {
+    throw toResearchError(err);
+  }
+}
+
+/**
+ * 抽出ターン（Web Searchなし・構造化出力のみ）。検索ターンの自由記述な会話全体を、
+ * Pass2 (`requestResearchCompletion`) が読める軽量な facts/sources 構造へ変換する。
+ *
+ * @param unresolvedGaps スタール検出（docs/pass1-agentic-search-design.md 9.1条件2）で
+ * 打ち切った場合、検索では埋まらなかった残りの観点（直前の判定ターンの`missing_categories`）。
+ * 指定された場合、それらがPass1では確認できなかった旨をfactsに明記させ、Pass2側で
+ * 妥当な推定・統合を行えるよう引き継ぐ（同ドキュメント9.4節）。
+ */
+export async function requestAgenticExtractionTurn(params: {
+  previousResponseId: string;
+  unresolvedGaps?: string[];
+}): Promise<MergedFactFinding> {
+  const { agenticModel, agenticJudgmentTimeoutMs } = getEnv();
+  const openai = getClient();
+  const gapsNote =
+    params.unresolvedGaps && params.unresolvedGaps.length > 0
+      ? " 加えて、以下の観点は検索を尽くしても十分な裏付けが見つからなかったため、" +
+        "「◯◯については実例・裏付けとなる情報が見つからなかった」という形でfactsに明記してください" +
+        `（捏造せず、未確認であること自体を事実として記録する）: ${params.unresolvedGaps.join("、")}`
+      : "";
+  try {
+    const res = await openai.responses.create(
+      {
+        model: agenticModel,
+        input:
+          "ここまでの調査会話全体から、確認できた事実を facts（最大40件、1〜2文の簡潔な箇条書き）として抽出し、" +
+          "実際に参照した出典を sources（title, url）としてまとめてください。捏造しないこと。" +
+          gapsNote,
+        previous_response_id: params.previousResponseId,
+        text: {
+          format: {
+            type: "json_schema",
+            name: "fact_extraction",
+            schema: mergedFactFindingJsonSchema,
+            strict: true,
+          },
+        },
+      },
+      { timeout: agenticJudgmentTimeoutMs },
+    );
+    return mergedFactFindingSchema.parse(JSON.parse(res.output_text ?? "{}"));
+  } catch (err) {
+    throw toResearchError(err);
+  }
 }
 
 /**
