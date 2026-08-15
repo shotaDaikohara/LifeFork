@@ -27,6 +27,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   pages: {
     signIn: "/login",
+    // AccessDenied等のエラーはデフォルトで pages.error (未指定なら組み込みの
+    // /api/auth/error ページ) に飛ぶため、明示的に /login を指定してカスタム
+    // ログイン画面のエラーメッセージ表示に合流させる。
+    error: "/login",
   },
   callbacks: {
     async signIn({ profile }) {
