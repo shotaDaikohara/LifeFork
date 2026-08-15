@@ -12,7 +12,7 @@ export async function Header() {
   return (
     <div className="topbar">
       <Link href="/" className="logo">
-        <i>🍴</i>LifeFork
+        LifeFork
       </Link>
       <div className="spacer" />
       <div className="who">
